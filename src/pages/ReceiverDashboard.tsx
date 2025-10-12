@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import MapView from "@/components/Map/MapView";
+import ChatList from "@/components/Chat/ChatList";
 import { Loader2 } from "lucide-react";
 
 const ReceiverDashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [currentTab, setCurrentTab] = useState('map');
 
   useEffect(() => {
     checkAuth();
@@ -40,14 +43,11 @@ const ReceiverDashboard = () => {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="container mx-auto">
-        <h1 className="text-3xl font-bold text-primary mb-6">Receiver Dashboard</h1>
-        <p className="text-muted-foreground">Food receiver features coming soon...</p>
-      </div>
-    </div>
-  );
+  if (currentTab === 'chat') {
+    return <ChatList />;
+  }
+
+  return <MapView userRole="food_receiver" onTabChange={setCurrentTab} />;
 };
 
 export default ReceiverDashboard;
