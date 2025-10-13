@@ -1,7 +1,6 @@
 import { Home, List, Plus, MessageCircle, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type NavTab = 'map' | 'browse' | 'add' | 'chat' | 'profile';
 
 interface BottomNavigationProps {
   currentTab: string;
