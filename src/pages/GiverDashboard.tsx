@@ -5,6 +5,7 @@ import MapView from "@/components/Map/MapView";
 import ChatList from "@/components/Chat/ChatList";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button"; // Added Button import for the coming soon section
 
 const GiverDashboard = () => {
   const navigate = useNavigate();
@@ -28,7 +29,7 @@ const GiverDashboard = () => {
         .from('profiles')
         .select('role')
         .eq('id', session.user.id)
-        .maybeSingle(); // Changed from .single() to .maybeSingle()
+        .maybeSingle();
 
       if (profile?.role !== 'food_giver') {
         navigate('/receiver-dashboard');
@@ -43,11 +44,9 @@ const GiverDashboard = () => {
     }
   };
 
-  // FIX: Wrap setCurrentTab in a proper function
   const handleTabChange = (tab: string) => {
-    console.log('Tab changed to:', tab); // Debug log
+    console.log('Tab changed to:', tab);
     
-    // Handle chat tab specially to prevent ChatList error
     if (tab === 'chat') {
       toast.info("Chat feature coming soon!");
       return;
@@ -64,7 +63,6 @@ const GiverDashboard = () => {
     );
   }
 
-  // Temporarily disable chat until it's fixed
   if (currentTab === 'chat') {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
@@ -79,12 +77,34 @@ const GiverDashboard = () => {
     );
   }
 
+  // --- MODIFICATION FOR DEBUGGING ---
+  // The original <MapView> component has been commented out to test if the error is inside it.
+  /*
   return (
     <MapView 
       userRole="food_giver" 
       onTabChange={handleTabChange}
     />
   );
+  */
+
+  // We now return this simple div instead. If you can see this text in your app,
+  // it confirms the error is caused by something inside the MapView component.
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-8">
+      <h1 className="text-3xl font-bold text-gray-800 mb-4">Giver Dashboard Loaded Successfully</h1>
+      <p className="text-lg text-gray-600">
+        This page is visible because the `MapView` component is not being rendered.
+      </p>
+      <p className="text-md text-gray-500 mt-2">
+        This test proves the error originates from within `MapView.tsx` or one of its dependencies.
+      </p>
+      <p className="text-md text-gray-500 mt-4 font-semibold">
+        Next step: You can now undo this change and begin debugging `MapView.tsx`.
+      </p>
+    </div>
+  );
+  // --- END OF MODIFICATION ---
 };
 
 export default GiverDashboard;
