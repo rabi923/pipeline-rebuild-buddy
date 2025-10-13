@@ -40,7 +40,7 @@ const MapView = ({ userRole, onTabChange }: MapViewProps) => {
       mapRef.current = L.map(mapContainerRef.current, {
         center: [13.0827, 80.2707],
         zoom: 13,
-        zoomControl: false // We can disable the default zoom control for a cleaner look
+        zoomControl: false
       });
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -49,7 +49,6 @@ const MapView = ({ userRole, onTabChange }: MapViewProps) => {
 
       dataMarkersRef.current.addTo(mapRef.current);
       
-      // Optionally, add a new zoom control in a better position
       L.control.zoom({ position: 'topright' }).addTo(mapRef.current);
     }
   }, []);
@@ -100,7 +99,6 @@ const MapView = ({ userRole, onTabChange }: MapViewProps) => {
         </div>
       )}
 
-      {/* --- FIX: Wrapper with a high z-index to ensure it's on top of the map --- */}
       <div className="relative z-[1000]">
         <BottomNavigation
           currentTab="map"
@@ -108,10 +106,19 @@ const MapView = ({ userRole, onTabChange }: MapViewProps) => {
           userRole={userRole}
         />
       </div>
-      {/* --- END OF FIX --- */}
-
 
       {userRole === 'food_giver' && (
         <AddFoodDialog
           open={showAddDialog}
           onOpenChange={setShowAddDialog}
+          onSuccess={() => { 
+            refetch();
+            setShowAddDialog(false);
+          }}
+        /> // --- THIS IS THE FIX --- The missing "/>" has been restored.
+      )}
+    </div>
+  );
+};
+
+export default MapView;
