@@ -4,8 +4,8 @@ import { cn } from '@/lib/utils';
 type NavTab = 'map' | 'browse' | 'add' | 'chat' | 'profile';
 
 interface BottomNavigationProps {
-  currentTab: NavTab;
-  onTabChange: (tab: NavTab) => void;
+  currentTab: string;
+  onTabChange: (tab: string) => void;
   userRole?: 'food_giver' | 'food_receiver';
 }
 
