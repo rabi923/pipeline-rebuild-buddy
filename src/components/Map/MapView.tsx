@@ -27,8 +27,20 @@ interface MapViewProps {
 }
 
 const MapView = ({ userRole, onTabChange }: MapViewProps) => {
-  const { location: userLocation, loading: locationLoading } = useUserLocation();
-  const { data, loading: dataLoading, refetch } = useMapData(userRole, userLocation);
+  // --- MODIFICATION FOR DEBUGGING ---
+  // Step 1: Comment out the original hook calls.
+  // This helps us see if the error is inside these hooks.
+  // const { location: userLocation, loading: locationLoading } = useUserLocation();
+  // const { data, loading: dataLoading, refetch } = useMapData(userRole, userLocation);
+
+  // Step 2: Provide fake, hardcoded data to replace the hooks.
+  const userLocation = null;        // Pretend we have no location
+  const locationLoading = false;    // Pretend loading is finished
+  const data: any[] = [];           // Pretend we have no map data
+  const dataLoading = false;        // Pretend loading is finished
+  const refetch = () => { console.log("Refetch called"); }; // A safe, empty function
+  // --- END OF MODIFICATION ---
+
   const [showAddDialog, setShowAddDialog] = useState(false);
   const handleTabChange = (tab: string) => {
     if (tab === 'add') {
@@ -73,54 +85,4 @@ const MapView = ({ userRole, onTabChange }: MapViewProps) => {
           return (
             <Marker 
               key={item.id} 
-              position={[item.latitude, item.longitude]}
-            >
-              <Popup>
-                <div className="p-2 min-w-[200px]">
-                  <h3 className="font-semibold text-base mb-1">
-                    {item.title || item.food_type || 'Food Item'}
-                  </h3>
-                  {item.description && (
-                    <p className="text-sm text-muted-foreground mb-2">{item.description}</p>
-                  )}
-                  {item.quantity && (
-                    <p className="text-sm">
-                      <span className="font-medium">Quantity:</span> {item.quantity}
-                    </p>
-                  )}
-                  {item.urgency_level && (
-                    <p className="text-sm">
-                      <span className="font-medium">Urgency:</span> {item.urgency_level}
-                    </p>
-                  )}
-                  {item.location && (
-                    <p className="text-sm text-muted-foreground mt-1">{item.location}</p>
-                  )}
-                </div>
-              </Popup>
-            </Marker>
-          );
-        })}
-      </MapContainer>
-
-      <BottomNavigation
-        currentTab="map"
-        onTabChange={handleTabChange}
-        userRole={userRole}
-      />
-
-      {userRole === 'food_giver' && (
-        <AddFoodDialog
-          open={showAddDialog}
-          onOpenChange={setShowAddDialog}
-          onSuccess={() =>{ 
-            refetch();
-            setShowAddDialog(false);
-          }}
-        />
-      )}
-    </div>
-  );
-};
-
-export default MapView;
+              position={[item.latitude, item.
