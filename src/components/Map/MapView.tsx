@@ -6,9 +6,14 @@ import { useMapData } from '@/hooks/useMapData';
 import BottomNavigation from './BottomNavigation';
 import AddFoodDialog from '../AddFoodDialog';
 import { Loader2 } from 'lucide-react';
+import L from 'leaflet'; // We still need L for other things, just not the icon fix
 
-// Fix Leaflet default marker icons
-import L from 'leaflet';
+// --- MODIFICATION FOR DEBUGGING ---
+// The entire block for fixing the default Leaflet marker icons has been commented out.
+// This is the most likely cause of the "Failed to fetch" build error, as it involves
+// directly importing image assets, which may not be supported in this environment.
+
+/*
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
@@ -20,6 +25,9 @@ let DefaultIcon = L.icon({
 });
 
 L.Marker.prototype.options.icon = DefaultIcon;
+*/
+// --- END OF MODIFICATION ---
+
 
 interface MapViewProps {
   userRole: 'food_giver' | 'food_receiver';
@@ -27,19 +35,12 @@ interface MapViewProps {
 }
 
 const MapView = ({ userRole, onTabChange }: MapViewProps) => {
-  // --- MODIFICATION FOR DEBUGGING ---
-  // We are temporarily disabling the custom hooks to see if they are the cause of the error.
-  
-  // const { location: userLocation, loading: locationLoading } = useUserLocation();
-  // const { data, loading: dataLoading, refetch } = useMapData(userRole, userLocation);
-
-  // We provide fake data so the rest of the component can render without the hooks.
+  // We are keeping the hooks commented out for this test as well.
   const userLocation = null;
   const locationLoading = false;
   const data: any[] = [];
   const dataLoading = false;
   const refetch = () => { console.log("Refetch called"); };
-  // --- END OF MODIFICATION ---
 
   const [showAddDialog, setShowAddDialog] = useState(false);
   const handleTabChange = (tab: string) => {
@@ -74,24 +75,7 @@ const MapView = ({ userRole, onTabChange }: MapViewProps) => {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {userLocation && (
-          <Marker position={[userLocation.lat, userLocation.lng]}>
-            <Popup>You are here</Popup>
-          </Marker>
-        )}
-        {data && data.map((item) => {
-          if (!item.latitude || !item.longitude) return null;
-          return (
-            <Marker 
-              key={item.id} 
-              position={[item.latitude, item.longitude]}
-            >
-              <Popup>
-                {/* popup content */}
-              </Popup>
-            </Marker>
-          );
-        })}
+        {/* We won't see any markers in this test, which is fine. */}
       </MapContainer>
 
       <BottomNavigation
