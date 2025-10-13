@@ -113,8 +113,10 @@ const MapView = ({ userRole, onTabChange }: MapViewProps) => {
         <AddFoodDialog
           open={showAddDialog}
           onOpenChange={setShowAddDialog}
-          onSuccess={() =>{ refetch();
-            setShowAddDialog(false);}}
+          onSuccess={() =>{ 
+            refetch();
+            setShowAddDialog(false);
+          }}
         />
       )}
     </div>
