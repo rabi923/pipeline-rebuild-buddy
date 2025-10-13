@@ -5,8 +5,7 @@ import MapView from "@/components/Map/MapView";
 import ChatList from "@/components/Chat/ChatList";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-// --- FIX IS HERE ---
-import { Button } from "@/components/ui/button"; // This line was missing
+import { Button } from "@/components/ui/button";
 
 const GiverDashboard = () => {
   const navigate = useNavigate();
@@ -58,32 +57,4 @@ const GiverDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (currentTab === 'chat') {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-center space-y-4">
-          <h2 className="text-2xl font-bold">Chat Coming Soon</h2>
-          <p className="text-muted-foreground">We're working on the chat feature</p>
-          <Button onClick={() => setCurrentTab('map')}>
-            Back to Map
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <MapView 
-      userRole="food_giver" 
-      onTabChange={handleTabChange}
-    />
-  );
-};
-
-export default GiverDashboard;
+      <div className="m
