@@ -27,7 +27,6 @@ interface MapViewProps {
 const MapView = ({ userRole, onTabChange }: MapViewProps) => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   
-  // The hooks are working perfectly, so we can use them.
   const { location: userLocation, loading: locationLoading } = useUserLocation();
   const { data, loading: dataLoading, refetch } = useMapData(userRole, userLocation);
 
@@ -37,24 +36,25 @@ const MapView = ({ userRole, onTabChange }: MapViewProps) => {
   const dataMarkersRef = useRef<L.LayerGroup>(L.layerGroup());
 
   useEffect(() => {
-    // This effect runs only once to initialize the map and its layers.
     if (mapContainerRef.current && !mapRef.current) {
       mapRef.current = L.map(mapContainerRef.current, {
-        center: [13.0827, 80.2707], // Start at a default location
-        zoom: 13
+        center: [13.0827, 80.2707],
+        zoom: 13,
+        zoomControl: false // We can disable the default zoom control for a cleaner look
       });
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       }).addTo(mapRef.current);
 
-      // Add the marker layer group to the map.
       dataMarkersRef.current.addTo(mapRef.current);
+      
+      // Optionally, add a new zoom control in a better position
+      L.control.zoom({ position: 'topright' }).addTo(mapRef.current);
     }
   }, []);
 
   useEffect(() => {
-    // This effect updates the map view and user marker when location is found.
     if (mapRef.current && userLocation) {
       mapRef.current.setView([userLocation.lat, userLocation.lng], 15);
       
@@ -69,7 +69,6 @@ const MapView = ({ userRole, onTabChange }: MapViewProps) => {
   }, [userLocation]);
 
   useEffect(() => {
-    // This effect updates the data markers.
     if (mapRef.current && data) {
       dataMarkersRef.current.clearLayers();
       data.forEach(item => {
@@ -83,19 +82,15 @@ const MapView = ({ userRole, onTabChange }: MapViewProps) => {
     }
   }, [data]);
 
-
   const handleTabChange = (tab: string) => {
     if (tab === 'add') setShowAddDialog(true);
     else onTabChange(tab);
   };
   
   return (
-    // We render the layout immediately. The map will be empty for a moment,
-    // and then the useEffect hooks will populate it with data.
     <div className="relative h-screen w-full">
       <div id="map" ref={mapContainerRef} style={{ height: '100vh', width: '100%' }} />
 
-      {/* Show a subtle loading indicator over the map while data is fetching */}
       {(locationLoading || dataLoading) && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white rounded-full shadow-lg p-2 flex items-center z-[1000]">
           <Loader2 className="h-5 w-5 animate-spin text-primary" />
@@ -105,24 +100,18 @@ const MapView = ({ userRole, onTabChange }: MapViewProps) => {
         </div>
       )}
 
-      <BottomNavigation
-        currentTab="map"
-        onTabChange={handleTabChange}
-        userRole={userRole}
-      />
+      {/* --- FIX: Wrapper with a high z-index to ensure it's on top of the map --- */}
+      <div className="relative z-[1000]">
+        <BottomNavigation
+          currentTab="map"
+          onTabChange={handleTabChange}
+          userRole={userRole}
+        />
+      </div>
+      {/* --- END OF FIX --- */}
+
 
       {userRole === 'food_giver' && (
         <AddFoodDialog
           open={showAddDialog}
           onOpenChange={setShowAddDialog}
-          onSuccess={() => { 
-            refetch();
-            setShowAddDialog(false);
-          }}
-        />
-      )}
-    </div>
-  );
-};
-
-export default MapView;
