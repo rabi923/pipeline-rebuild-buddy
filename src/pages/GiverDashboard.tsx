@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import MapView from "@/components/Map/MapView";
 import ChatList from "@/components/Chat/ChatList";
 import { Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 const GiverDashboard = () => {
   const navigate = useNavigate();
@@ -47,13 +47,7 @@ const GiverDashboard = () => {
     return <ChatList />;
   }
 
-  return (
-    <div className="min-h-screen bg-background p-4">
-      <h1 className="text-2xl font-bold mb-4">Food Giver Dashboard</h1>
-      <p className="text-muted-foreground mb-4">Map view temporarily disabled - fixing react-leaflet issue</p>
-      <Button onClick={() => setCurrentTab('chat')}>Go to Chat</Button>
-    </div>
-  );
+  return <MapView userRole="food_giver" onTabChange={setCurrentTab} />;
 };
 
 export default GiverDashboard;

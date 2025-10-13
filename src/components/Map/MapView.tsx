@@ -1,26 +1,30 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { useMapData } from '@/hooks/useMapData';
-import { filterByDistance, sortByDistance } from '@/utils/distanceCalculator';
 import BottomNavigation from './BottomNavigation';
 import AddFoodDialog from '../AddFoodDialog';
 import { Loader2 } from 'lucide-react';
+
+// Fix Leaflet default marker icons
+import L from 'leaflet';
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+
+let DefaultIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41]
+});
+
+L.Marker.prototype.options.icon = DefaultIcon;
 
 interface MapViewProps {
   userRole: 'food_giver' | 'food_receiver';
   onTabChange: (tab: string) => void;
 }
-
-// Fix default marker icon
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
 
 const MapView = ({ userRole, onTabChange }: MapViewProps) => {
   const { location: userLocation, loading: locationLoading } = useUserLocation();
@@ -44,12 +48,12 @@ const MapView = ({ userRole, onTabChange }: MapViewProps) => {
       <MapContainer
         center={defaultCenter}
         zoom={13}
-        className="h-full w-full"
+        scrollWheelZoom={true}
         style={{ height: '100vh', width: '100%' }}
       >
         <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; OpenStreetMap'
         />
         {userLocation && (
           <Marker position={[userLocation.lat, userLocation.lng]}>
