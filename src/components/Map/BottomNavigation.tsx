@@ -1,6 +1,5 @@
-import { Home, List, Plus, MessageCircle, User } from 'lucide-react';
+import { Home, Plus, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
 
 interface BottomNavigationProps {
   currentTab: string;
@@ -9,12 +8,16 @@ interface BottomNavigationProps {
 }
 
 const BottomNavigation = ({ currentTab, onTabChange, userRole }: BottomNavigationProps) => {
+  const handleClick = (tab: string) => {
+    onTabChange(tab);
+  };
+
   return (
     <div className="fixed bottom-0 left-0 right-0 h-16 bg-background border-t flex items-center justify-around shadow-lg z-50">
       <button
-        onClick={() => onTabChange('map')}
+        onClick={() => handleClick('map')}
         className={cn(
-          "flex flex-col items-center justify-center min-w-[60px] h-full",
+          "flex flex-col items-center justify-center min-w-[60px] h-full transition-colors",
           currentTab === 'map' ? "text-primary" : "text-muted-foreground"
         )}
       >
@@ -23,10 +26,10 @@ const BottomNavigation = ({ currentTab, onTabChange, userRole }: BottomNavigatio
       </button>
       
       <button
-        onClick={() => onTabChange('add')}
+        onClick={() => handleClick('add')}
         className="flex flex-col items-center justify-center transform -translate-y-4"
       >
-        <div className="w-14 h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg">
+        <div className="w-14 h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors">
           <Plus className="h-6 w-6" />
         </div>
         <span className="text-xs mt-1 text-muted-foreground">
@@ -35,9 +38,9 @@ const BottomNavigation = ({ currentTab, onTabChange, userRole }: BottomNavigatio
       </button>
       
       <button
-        onClick={() => onTabChange('chat')}
+        onClick={() => handleClick('chat')}
         className={cn(
-          "flex flex-col items-center justify-center min-w-[60px] h-full",
+          "flex flex-col items-center justify-center min-w-[60px] h-full transition-colors",
           currentTab === 'chat' ? "text-primary" : "text-muted-foreground"
         )}
       >
