@@ -5,7 +5,8 @@ import MapView from "@/components/Map/MapView";
 import ChatList from "@/components/Chat/ChatList";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button"; // Added Button import for the coming soon section
+// --- FIX IS HERE ---
+import { Button } from "@/components/ui/button"; // This line was missing
 
 const GiverDashboard = () => {
   const navigate = useNavigate();
