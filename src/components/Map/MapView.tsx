@@ -28,17 +28,17 @@ interface MapViewProps {
 
 const MapView = ({ userRole, onTabChange }: MapViewProps) => {
   // --- MODIFICATION FOR DEBUGGING ---
-  // Step 1: Comment out the original hook calls.
-  // This helps us see if the error is inside these hooks.
+  // We are temporarily disabling the custom hooks to see if they are the cause of the error.
+  
   // const { location: userLocation, loading: locationLoading } = useUserLocation();
   // const { data, loading: dataLoading, refetch } = useMapData(userRole, userLocation);
 
-  // Step 2: Provide fake, hardcoded data to replace the hooks.
-  const userLocation = null;        // Pretend we have no location
-  const locationLoading = false;    // Pretend loading is finished
-  const data: any[] = [];           // Pretend we have no map data
-  const dataLoading = false;        // Pretend loading is finished
-  const refetch = () => { console.log("Refetch called"); }; // A safe, empty function
+  // We provide fake data so the rest of the component can render without the hooks.
+  const userLocation = null;
+  const locationLoading = false;
+  const data: any[] = [];
+  const dataLoading = false;
+  const refetch = () => { console.log("Refetch called"); };
   // --- END OF MODIFICATION ---
 
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -81,8 +81,37 @@ const MapView = ({ userRole, onTabChange }: MapViewProps) => {
         )}
         {data && data.map((item) => {
           if (!item.latitude || !item.longitude) return null;
-          
           return (
             <Marker 
               key={item.id} 
-              position={[item.latitude, item.
+              position={[item.latitude, item.longitude]}
+            >
+              <Popup>
+                {/* popup content */}
+              </Popup>
+            </Marker>
+          );
+        })}
+      </MapContainer>
+
+      <BottomNavigation
+        currentTab="map"
+        onTabChange={handleTabChange}
+        userRole={userRole}
+      />
+
+      {userRole === 'food_giver' && (
+        <AddFoodDialog
+          open={showAddDialog}
+          onOpenChange={setShowAddDialog}
+          onSuccess={() =>{ 
+            refetch();
+            setShowAddDialog(false);
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+export default MapView;
