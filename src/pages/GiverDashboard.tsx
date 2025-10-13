@@ -77,34 +77,12 @@ const GiverDashboard = () => {
     );
   }
 
-  // --- MODIFICATION FOR DEBUGGING ---
-  // The original <MapView> component has been commented out to test if the error is inside it.
-  /*
   return (
     <MapView 
       userRole="food_giver" 
       onTabChange={handleTabChange}
     />
   );
-  */
-
-  // We now return this simple div instead. If you can see this text in your app,
-  // it confirms the error is caused by something inside the MapView component.
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-8">
-      <h1 className="text-3xl font-bold text-gray-800 mb-4">Giver Dashboard Loaded Successfully</h1>
-      <p className="text-lg text-gray-600">
-        This page is visible because the `MapView` component is not being rendered.
-      </p>
-      <p className="text-md text-gray-500 mt-2">
-        This test proves the error originates from within `MapView.tsx` or one of its dependencies.
-      </p>
-      <p className="text-md text-gray-500 mt-4 font-semibold">
-        Next step: You can now undo this change and begin debugging `MapView.tsx`.
-      </p>
-    </div>
-  );
-  // --- END OF MODIFICATION ---
 };
 
 export default GiverDashboard;
