@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react'; // Using React's useState
+import BottomNavigation from './BottomNavigation'; // Re-adding component
+import AddFoodDialog from '../AddFoodDialog';   // Re-adding component
+import { Loader2 } from 'lucide-react';
 
-// All other imports have been intentionally removed to create a clean slate.
+// Note: react-leaflet and custom hooks are still NOT imported yet.
 
 interface MapViewProps {
   userRole: 'food_giver' | 'food_receiver';
@@ -8,17 +11,43 @@ interface MapViewProps {
 }
 
 const MapView = ({ userRole, onTabChange }: MapViewProps) => {
+  // Re-adding state and handlers for the child components
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const handleTabChange = (tab: string) => {
+    if (tab === 'add') {
+      setShowAddDialog(true);
+    } else {
+      onTabChange(tab);
+    }
+  };
+
+  const refetch = () => { console.log("Refetch called"); };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-green-100 text-green-900 p-8">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold">Minimal MapView Component Loaded</h1>
-        <p className="mt-4 text-lg">
-          This is a temporary placeholder.
-        </p>
-        <p className="mt-2 text-md">
-          If you can see this message, it means the build error is finally gone. We can now proceed with re-adding the original code step-by-step.
-        </p>
+    <div className="relative h-screen w-full">
+      
+      {/* This is the placeholder for the map */}
+      <div className="min-h-screen flex items-center justify-center bg-blue-100 text-blue-900">
+        <p>Step 1 successful: Component structure and child components have loaded correctly.</p>
       </div>
+
+      {/* Re-adding the original child components */}
+      <BottomNavigation
+        currentTab="map"
+        onTabChange={handleTabChange}
+        userRole={userRole}
+      />
+
+      {userRole === 'food_giver' && (
+        <AddFoodDialog
+          open={showAddDialog}
+          onOpenChange={setShowAddDialog}
+          onSuccess={() =>{ 
+            refetch();
+            setShowAddDialog(false);
+          }}
+        />
+      )}
     </div>
   );
 };
