@@ -1,9 +1,28 @@
-import React, { useState } from 'react'; // Using React's useState
-import BottomNavigation from './BottomNavigation'; // Re-adding component
-import AddFoodDialog from '../AddFoodDialog';   // Re-adding component
+import React, { useState } from 'react';
+// --- Re-adding Leaflet imports ---
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+// --- End of re-added imports ---
+
+import BottomNavigation from './BottomNavigation';
+import AddFoodDialog from '../AddFoodDialog';
 import { Loader2 } from 'lucide-react';
 
-// Note: react-leaflet and custom hooks are still NOT imported yet.
+// --- We are now re-adding the Leaflet icon fix. ---
+// This part is important because it might be the source of the original error.
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+
+let DefaultIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41]
+});
+L.Marker.prototype.options.icon = DefaultIcon;
+// --- End of icon fix ---
+
 
 interface MapViewProps {
   userRole: 'food_giver' | 'food_receiver';
@@ -11,7 +30,6 @@ interface MapViewProps {
 }
 
 const MapView = ({ userRole, onTabChange }: MapViewProps) => {
-  // Re-adding state and handlers for the child components
   const [showAddDialog, setShowAddDialog] = useState(false);
   const handleTabChange = (tab: string) => {
     if (tab === 'add') {
@@ -20,36 +38,20 @@ const MapView = ({ userRole, onTabChange }: MapViewProps) => {
       onTabChange(tab);
     }
   };
-
   const refetch = () => { console.log("Refetch called"); };
+
+  // Hardcoded default center for the map
+  const defaultCenter: [number, number] = [13.0827, 80.2707];
 
   return (
     <div className="relative h-screen w-full">
       
-      {/* This is the placeholder for the map */}
-      <div className="min-h-screen flex items-center justify-center bg-blue-100 text-blue-900">
-        <p>Step 1 successful: Component structure and child components have loaded correctly.</p>
-      </div>
-
-      {/* Re-adding the original child components */}
-      <BottomNavigation
-        currentTab="map"
-        onTabChange={handleTabChange}
-        userRole={userRole}
-      />
-
-      {userRole === 'food_giver' && (
-        <AddFoodDialog
-          open={showAddDialog}
-          onOpenChange={setShowAddDialog}
-          onSuccess={() =>{ 
-            refetch();
-            setShowAddDialog(false);
-          }}
-        />
-      )}
-    </div>
-  );
-};
-
-export default MapView;
+      {/* --- The MapContainer is now being rendered --- */}
+      <MapContainer
+        center={defaultCenter}
+        zoom={13}
+        scrollWheelZoom={true}
+        style={{ height: '100vh', width: '100%' }}
+      >
+        <TileLayer
+          attribution='&copy; <a hr
