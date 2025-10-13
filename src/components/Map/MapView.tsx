@@ -30,6 +30,13 @@ const MapView = ({ userRole, onTabChange }: MapViewProps) => {
   const { location: userLocation, loading: locationLoading } = useUserLocation();
   const { data, loading: dataLoading, refetch } = useMapData(userRole, userLocation);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const handleTabChange = (tab: string) => {
+    if (tab === 'add') {
+      setShowAddDialog(true);
+    } else {
+      onTabChange(tab);
+    }
+  };
 
   if (locationLoading || dataLoading) {
     return (
@@ -64,10 +71,7 @@ const MapView = ({ userRole, onTabChange }: MapViewProps) => {
 
       <BottomNavigation
         currentTab="map"
-        onTabChange={(tab: any) => {
-          if (tab === 'add') setShowAddDialog(true);
-          else onTabChange(tab);
-        }}
+        onTabChange={handleTabChange}
         userRole={userRole}
       />
 
