@@ -67,6 +67,40 @@ const MapView = ({ userRole, onTabChange }: MapViewProps) => {
             <Popup>You are here</Popup>
           </Marker>
         )}
+        {data && data.map((item) => {
+          if (!item.latitude || !item.longitude) return null;
+          
+          return (
+            <Marker 
+              key={item.id} 
+              position={[item.latitude, item.longitude]}
+            >
+              <Popup>
+                <div className="p-2 min-w-[200px]">
+                  <h3 className="font-semibold text-base mb-1">
+                    {item.title || item.food_type || 'Food Item'}
+                  </h3>
+                  {item.description && (
+                    <p className="text-sm text-muted-foreground mb-2">{item.description}</p>
+                  )}
+                  {item.quantity && (
+                    <p className="text-sm">
+                      <span className="font-medium">Quantity:</span> {item.quantity}
+                    </p>
+                  )}
+                  {item.urgency_level && (
+                    <p className="text-sm">
+                      <span className="font-medium">Urgency:</span> {item.urgency_level}
+                    </p>
+                  )}
+                  {item.location && (
+                    <p className="text-sm text-muted-foreground mt-1">{item.location}</p>
+                  )}
+                </div>
+              </Popup>
+            </Marker>
+          );
+        })}
       </MapContainer>
 
       <BottomNavigation
@@ -79,7 +113,8 @@ const MapView = ({ userRole, onTabChange }: MapViewProps) => {
         <AddFoodDialog
           open={showAddDialog}
           onOpenChange={setShowAddDialog}
-          onSuccess={() => refetch()}
+          onSuccess={() =>{ refetch();
+            setShowAddDialog(false);}}
         />
       )}
     </div>
