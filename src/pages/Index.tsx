@@ -7,16 +7,15 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10">
-      {/* Hero Section */}
       <div className="container mx-auto px-4 py-16 flex flex-col items-center justify-center min-h-screen text-center">
         <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center mb-6 shadow-[var(--shadow-card)]">
           <Leaf className="h-12 w-12 text-white" />
         </div>
-
+        
         <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
           FoodShare
         </h1>
-
+        
         <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl">
           Connecting food givers with receivers to reduce waste and fight hunger
         </p>
