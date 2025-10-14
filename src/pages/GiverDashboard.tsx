@@ -1,76 +1,19 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+// src/pages/GiverDashboard.tsx
+
+import { useState } from "react"; // useNavigate and supabase are no longer needed here
 import MapView from "@/components/Map/MapView";
 import ChatList from "@/components/Chat/ChatList";
 import { Loader2 } from "lucide-react";
-// import { toast } from "sonner";
-import { useAuthSession } from '@/hooks/useAuthSession'; 
+import { useAuthSession } from '@/hooks/useAuthSession'; // Correctly imported
 
 const GiverDashboard = () => {
-  const navigate = useNavigate();
-  // const [loading, setLoading] = useState(true);
+  // `navigate` is no longer needed because the hook handles navigation
   const [currentTab, setCurrentTab] = useState('map');
-  const { loading } = useAuthSession('food_giver');
+  
+  // This one line correctly handles all authentication and role-checking
+  const { loading } = useAuthSession('food_giver'); 
 
-  // useEffect(() => {
-  //   checkAuth();
-  // }, []);
-
-  // const checkAuth = async () => {
-  //   try {
-  //     const { data: { session } } = await supabase.auth.getSession();
-      
-  //     if (!session) {
-  //       navigate('/auth', { replace: true });
-  //       return;
-  //     }
-
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .maybeSingle();
-
-      if (profileError) {
-        console.error('Profile fetch error:', profileError);
-        toast.error('Failed to load profile. Please login again.');
-        await supabase.auth.signOut();
-        navigate('/auth', { replace: true });
-        return;
-      }
-
-      // Profile doesn't exist
-      if (!profile) {
-        toast.error('Profile not found. Please sign up again.');
-        await supabase.auth.signOut();
-        navigate('/auth', { replace: true });
-        return;
-      }
-
-      // Profile exists but wrong role
-      if (profile.role === 'food_receiver') {
-        navigate('/receiver-dashboard', { replace: true });
-        return;
-      }
-
-      // Profile exists but role is neither giver nor receiver
-      if (profile.role !== 'food_giver') {
-        toast.error('Invalid user role. Please contact support.');
-        await supabase.auth.signOut();
-        navigate('/auth', { replace: true });
-        return;
-      }
-
-      // All good - user is a food giver
-      setLoading(false);
-
-    } catch (error) {
-      console.error('Auth error:', error);
-      toast.error('Authentication error. Please login again.');
-      navigate('/auth', { replace: true });
-    }
-  };
+  // The entire old `checkAuth` function and its `try/catch` block are now deleted.
 
   const handleTabChange = (tab: string) => {
     setCurrentTab(tab);
