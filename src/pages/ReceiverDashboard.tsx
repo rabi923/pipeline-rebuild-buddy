@@ -44,16 +44,7 @@ const ReceiverDashboard = () => {
     }
   };
 
-  // FIX: Wrap setCurrentTab in a proper function
   const handleTabChange = (tab: string) => {
-    console.log('Tab changed to:', tab); // Debug log
-    
-    // Handle chat tab specially to prevent ChatList error
-    if (tab === 'chat') {
-      toast.info("Chat feature coming soon!");
-      return;
-    }
-    
     setCurrentTab(tab);
   };
 
@@ -65,19 +56,8 @@ const ReceiverDashboard = () => {
     );
   }
 
-  // Temporarily disable chat until it's fixed
   if (currentTab === 'chat') {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-center space-y-4">
-          <h2 className="text-2xl font-bold">Chat Coming Soon</h2>
-          <p className="text-muted-foreground">We're working on the chat feature</p>
-          <Button onClick={() => setCurrentTab('map')}>
-            Back to Map
-          </Button>
-        </div>
-      </div>
-    );
+    return <ChatList onBack={() => setCurrentTab('map')} />;
   }
 
   return (

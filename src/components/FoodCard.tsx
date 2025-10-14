@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Clock, Package, Phone, User, Navigation, Trash2 } from "lucide-react";
+import { MapPin, Clock, Package, User, Navigation, Trash2, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -14,9 +14,10 @@ interface FoodCardProps {
   showContact?: boolean;
   onUpdate?: () => void;
   userLocation?: LocationCoords | null;
+  onMessageClick?: (giverId: string) => void;
 }
 
-const FoodCard = ({ listing, isOwner, showContact, onUpdate, userLocation }: FoodCardProps) => {
+const FoodCard = ({ listing, isOwner, showContact, onUpdate, userLocation, onMessageClick }: FoodCardProps) => {
   const distance = userLocation && listing.latitude && listing.longitude
     ? calculateDistance(userLocation, { lat: listing.latitude, lng: listing.longitude })
     : null;
@@ -127,21 +128,15 @@ const FoodCard = ({ listing, isOwner, showContact, onUpdate, userLocation }: Foo
               <Trash2 className="h-4 w-4" />
             </Button>
           </>
-        ) : showContact && listing.profiles?.phone ? (
+        ) : showContact && listing.giver_id ? (
           <Button
             className="w-full"
-            asChild
+            onClick={() => onMessageClick?.(listing.giver_id)}
           >
-            <a href={`tel:${listing.profiles.phone}`}>
-              <Phone className="mr-2 h-4 w-4" />
-              Contact Giver
-            </a>
+            <MessageCircle className="mr-2 h-4 w-4" />
+            Message Giver
           </Button>
-        ) : (
-          <Button className="w-full" variant="secondary">
-            Contact via App
-          </Button>
-        )}
+        ) : null}
       </CardFooter>
     </Card>
   );

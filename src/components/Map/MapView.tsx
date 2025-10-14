@@ -4,9 +4,12 @@ import L from 'leaflet';
 
 import BottomNavigation from './BottomNavigation';
 import AddFoodDialog from '../AddFoodDialog';
+import FoodListPanel from './FoodListPanel';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { useMapData } from '@/hooks/useMapData';
 import { Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import ChatWindow from '../Chat/ChatWindow';
 
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -26,6 +29,8 @@ interface MapViewProps {
 
 const MapView = ({ userRole, onTabChange }: MapViewProps) => {
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [chatUser, setChatUser] = useState<{ id: string; name: string; avatar?: string | null } | null>(null);
   
   const { location: userLocation, loading: locationLoading } = useUserLocation();
   const { data, loading: dataLoading, refetch } = useMapData(userRole, userLocation);
@@ -34,6 +39,14 @@ const MapView = ({ userRole, onTabChange }: MapViewProps) => {
   const mapRef = useRef<L.Map | null>(null);
   const userMarkerRef = useRef<L.Marker | null>(null);
   const dataMarkersRef = useRef<L.LayerGroup>(L.layerGroup());
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+    };
+    getUser();
+  }, []);
 
   useEffect(() => {
     if (mapContainerRef.current && !mapRef.current) {
@@ -85,19 +98,76 @@ const MapView = ({ userRole, onTabChange }: MapViewProps) => {
     if (tab === 'add') setShowAddDialog(true);
     else onTabChange(tab);
   };
+
+  const handleMessageClick = async (giverId: string) => {
+    // Fetch giver profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name, profile_picture_url')
+      .eq('id', giverId)
+      .maybeSingle();
+
+    if (profile) {
+      setChatUser({
+        id: giverId,
+        name: profile.full_name || 'Unknown User',
+        avatar: profile.profile_picture_url,
+      });
+    }
+  };
+
+  if (chatUser) {
+    return (
+      <ChatWindow
+        otherUserId={chatUser.id}
+        otherUserName={chatUser.name}
+        otherUserAvatar={chatUser.avatar}
+        onBack={() => setChatUser(null)}
+      />
+    );
+  }
   
   return (
-    <div className="relative h-screen w-full">
-      <div id="map" ref={mapContainerRef} style={{ height: '100vh', width: '100%' }} />
+    <div className="relative h-screen w-full flex">
+      {/* Map on the left (or full width on mobile) */}
+      <div className="flex-1 relative">
+        <div id="map" ref={mapContainerRef} style={{ height: '100vh', width: '100%' }} />
 
-      {(locationLoading || dataLoading) && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white rounded-full shadow-lg p-2 flex items-center z-[1000]">
-          <Loader2 className="h-5 w-5 animate-spin text-primary" />
-          <span className="ml-2 text-sm text-muted-foreground">
-            {locationLoading ? "Finding location..." : "Loading data..."}
-          </span>
-        </div>
-      )}
+        {(locationLoading || dataLoading) && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white rounded-full shadow-lg p-2 flex items-center z-[1000]">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            <span className="ml-2 text-sm text-muted-foreground">
+              {locationLoading ? "Finding location..." : "Loading data..."}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Food list panel on the right (hidden on mobile, visible on md+) */}
+      <div className="hidden md:block w-96 border-l bg-background">
+        <FoodListPanel
+          data={data}
+          loading={dataLoading}
+          userRole={userRole}
+          userLocation={userLocation}
+          currentUserId={currentUserId}
+          onUpdate={refetch}
+          onMessageClick={handleMessageClick}
+        />
+      </div>
+
+      {/* Mobile food list panel (shows as overlay on small screens) */}
+      <div className="md:hidden absolute bottom-20 left-0 right-0 max-h-[40vh] bg-background border-t z-[999]">
+        <FoodListPanel
+          data={data}
+          loading={dataLoading}
+          userRole={userRole}
+          userLocation={userLocation}
+          currentUserId={currentUserId}
+          onUpdate={refetch}
+          onMessageClick={handleMessageClick}
+        />
+      </div>
 
       <div className="relative z-[1000]">
         <BottomNavigation
@@ -115,7 +185,7 @@ const MapView = ({ userRole, onTabChange }: MapViewProps) => {
             refetch();
             setShowAddDialog(false);
           }}
-        /> // --- THIS IS THE FIX --- The missing "/>" has been restored.
+        />
       )}
     </div>
   );
