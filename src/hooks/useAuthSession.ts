@@ -9,6 +9,8 @@ import { toast } from 'sonner';
 interface Profile {
   id: string;
   role: 'food_giver' | 'food_receiver';
+  full_name: string;
+  location?: string;
   // Add other fields like full_name if you need them
 }
 
@@ -36,7 +38,7 @@ export const useAuthSession = (expectedRole?: 'food_giver' | 'food_receiver') =>
 
       const { data: userProfile, error: profileError } = await supabase
         .from('profiles')
-        .select('id, role')
+        .select('*')
         .eq('id', currentSession.user.id)
         .single();
       
@@ -64,6 +66,11 @@ export const useAuthSession = (expectedRole?: 'food_giver' | 'food_receiver') =>
 
     checkSession();
   }, [navigate, expectedRole]);
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    toast.success('Signed out successfully');
+    navigate('/', { replace: true });
+  };
 
-  return { session, user, profile, loading };
+  return { session, user, profile, loading, signOut   };
 };
