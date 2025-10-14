@@ -1,42 +1,17 @@
-// import { useState, useEffect } from 'react';
+// src/pages/Profile.tsx
+
 import { useNavigate } from 'react-router-dom';
-// import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft } from 'lucide-react';
-// ADD this new import
-import { useAuthSession } from '@/hooks/useAuthSession';
+import { useAuthSession } from '@/hooks/useAuthSession'; // Correctly imported
 
 const Profile = () => {
   const navigate = useNavigate();
+
+  // This one line correctly replaces all the old state and useEffect hooks
   const { profile, loading } = useAuthSession();
-  // const [loading, setLoading] = useState(true);
-  // const [profile, setProfile] = useState<any>(null);
 
-  // useEffect(() => {
-  //   fetchProfile();
-  // }, []);
-
-  // const fetchProfile = async () => {
-  //   const { data: { user } } = await supabase.auth.getUser();
-  //   if (!user) {
-  //     navigate('/auth');
-  //     return;
-  //   }
-
-  const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
-
-    if (error) {
-      console.error('Error fetching profile:', error);
-    } else {
-      setProfile(data);
-    }
-
-    setLoading(false);
-  };
+  // All of the old `fetchProfile` function is now deleted.
 
   if (loading) {
     return (
@@ -56,6 +31,7 @@ const Profile = () => {
         
         <h1 className="text-3xl font-bold text-primary mb-6">Profile</h1>
         
+        {/* This part was already correct and works perfectly with the new hook */}
         {profile && (
           <div className="bg-card rounded-lg p-6 shadow-[var(--shadow-card)]">
             <div className="space-y-4">
