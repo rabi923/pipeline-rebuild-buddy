@@ -49,7 +49,7 @@ const AddFoodDialog = ({ open, onOpenChange, onSuccess }: AddFoodDialogProps) =>
       const reader = new FileReader();
       const preview = await new Promise<string>((resolve) => {
         reader.onloadend = () => resolve(reader.result as string);
-        reader.readAsDataURL(file);
+        reader.readDataURL(file);
       });
       newPreviews.push(preview);
     }
@@ -126,14 +126,12 @@ const AddFoodDialog = ({ open, onOpenChange, onSuccess }: AddFoodDialogProps) =>
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {/* --- THIS IS THE FIX --- A high z-index is added to ensure the dialog appears above the map */}
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto z-[2000]">
         <DialogHeader>
           <DialogTitle className="text-2xl">Add Food Listing</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* ... rest of your form ... */}
           <div className="space-y-2">
             <Label>Food Photos (Optional, up to 5)</Label>
             {imagePreviews.length > 0 ? (
@@ -187,7 +185,8 @@ const AddFoodDialog = ({ open, onOpenChange, onSuccess }: AddFoodDialogProps) =>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="quantity">Quantity *</Label>
-              <Input id="quantity" placeholder="e.g., 2 plates, 5kg" value={formData.quantity} onChange={(e) => setFormData({ ...formData, quantity: e.gantt.value })} required />
+              {/* --- THIS LINE IS NOW FIXED --- */}
+              <Input id="quantity" placeholder="e.g., 2 plates, 5kg" value={formData.quantity} onChange={(e) => setFormData({ ...formData, quantity: e.target.value })} required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="food_type">Food Type</Label>
