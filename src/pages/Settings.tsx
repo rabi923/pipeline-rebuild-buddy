@@ -1,33 +1,17 @@
-// import { useState, useEffect } from 'react';
+// src/pages/Settings.tsx
+
 import { useNavigate } from 'react-router-dom';
-// import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft } from 'lucide-react';
-import { toast } from 'sonner';
+import { useAuthSession } from '@/hooks/useAuthSession'; // Correctly imported
 
 const Settings = () => {
   const navigate = useNavigate();
+  
+  // This correctly provides both the loading state and the signOut function
   const { loading, signOut } = useAuthSession();
-  // const [loading, setLoading] = useState(true);
 
-  // useEffect(() => {
-  //   checkAuth();
-  // }, []);
-
-  // const checkAuth = async () => {
-  //   const { data: { user } } = await supabase.auth.getUser();
-  //   if (!user) {
-  //     navigate('/auth');
-  //     return;
-  //   }
-//     setLoading(false);
-//   };
-
-//   const handleSignOut = async () => {
-//     await supabase.auth.signOut();
-//     toast.success('Signed out successfully');
-//     navigate('/');
-//   };
+  // All the old state, useEffect, checkAuth, and handleSignOut code is now deleted.
 
   if (loading) {
     return (
@@ -49,7 +33,11 @@ const Settings = () => {
         
         <div className="bg-card rounded-lg p-6 shadow-[var(--shadow-card)] space-y-4">
           <h2 className="text-xl font-semibold mb-4">Account</h2>
-          <Button variant="destructive" onClick={handleSignOut}>
+          {/* 
+            THIS IS THE KEY FIX: The onClick now calls `signOut` from our hook
+            instead of the old `handleSignOut`.
+          */}
+          <Button variant="destructive" onClick={signOut}>
             Sign Out
           </Button>
         </div>
