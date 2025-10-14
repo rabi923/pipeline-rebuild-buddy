@@ -1,32 +1,33 @@
-import { useState, useEffect } from 'react';
+// import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+// import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Settings = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
+  const { loading, signOut } = useAuthSession();
+  // const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
+  // useEffect(() => {
+  //   checkAuth();
+  // }, []);
 
-  const checkAuth = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-    setLoading(false);
-  };
+  // const checkAuth = async () => {
+  //   const { data: { user } } = await supabase.auth.getUser();
+  //   if (!user) {
+  //     navigate('/auth');
+  //     return;
+  //   }
+//     setLoading(false);
+//   };
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    toast.success('Signed out successfully');
-    navigate('/');
-  };
+//   const handleSignOut = async () => {
+//     await supabase.auth.signOut();
+//     toast.success('Signed out successfully');
+//     navigate('/');
+//   };
 
   if (loading) {
     return (
