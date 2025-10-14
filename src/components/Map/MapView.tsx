@@ -1,6 +1,6 @@
 // src/components/Map/MapView.tsx (Final, Corrected Version)
 
-import React, 'useState', 'useEffect', 'useRef', 'useCallback' from 'react';
+import React, {'useState', 'useEffect', 'useRef', 'useCallback'} from 'react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 // --- CHANGE: We no longer need ReactDOMServer
