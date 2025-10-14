@@ -102,39 +102,34 @@ const Auth = () => {
           },
         });
 
-        if (error) throw error;
+        // if (error) throw error;
 
-        if (!data.user) {
-          throw new Error('Signup failed - no user returned');
-        }
+        // --- REPLACE THE DELETED BLOCK WITH THIS ---
 
-        // Wait a moment for trigger to create profile
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Check if profile was created by trigger
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('id, role')
-          .eq('id', data.user.id)
-          .maybeSingle();
-
-        if (!profile) {
-          // Trigger didn't work, manually create profile
-          console.log('Trigger failed, creating profile manually...');
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: data.user.id,
-              email: email,
-              full_name: fullName,
-              role: role,
-            });
-
-          if (profileError && profileError.code !== '23505') {
-            console.error('Profile creation error:', profileError);
-            // Don't throw, continue anyway
-          }
-        }
+        if (error) throw error; // The original error check is still good
+        
+        toast.success("Account created! Please check your email to verify and then sign in.");
+        
+        // Clear the form and switch to the login view
+        setIsLogin(true);
+        setEmail(email); // Keep email for user convenience
+        setPassword("");
+        setFullName("");
+        
+        // NO LONGER redirecting immediately. The user must verify their email first.
+        // The immediate redirection was another issue, as their profile might not be
+        // fully active before email confirmation.
+        //
+        // This is a much more standard and robust user flow.
+        //
+        // OLD CODE that should be deleted:
+        // toast.success("Account created! Redirecting...");
+        // if (role === 'food_giver') {
+        //   navigate('/giver-dashboard', { replace: true });
+        // } else {
+        //   navigate('/receiver-dashboard', { replace: true });
+        // }
+        // --- END OF REPLACEMENT BLOCK ---
 
         toast.success("Account created! Redirecting...");
 
