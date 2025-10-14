@@ -19,24 +19,32 @@ const Auth = () => {
   const [role, setRole] = useState<"food_giver" | "food_receiver">("food_receiver");
 
   useEffect(() => {
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profile?.role === 'food_giver') {
-          navigate('/giver-dashboard');
-        } else {
-          navigate('/receiver-dashboard');
-        }
-      }
-    };
-    checkUser();
+    checkExistingSession();
   }, [navigate]);
+
+  const checkExistingSession = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .maybeSingle();
+
+      if (profile) {
+        // Profile exists, redirect based on role
+        if (profile.role === 'food_giver') {
+          navigate('/giver-dashboard', { replace: true });
+        } else if (profile.role === 'food_receiver') {
+          navigate('/receiver-dashboard', { replace: true });
+        }
+      } else {
+        // Profile doesn't exist, sign out and let them re-register
+        await supabase.auth.signOut();
+        toast.error('Profile not found. Please sign up again.');
+      }
+    }
+  };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +52,7 @@ const Auth = () => {
 
     try {
       if (isLogin) {
+        // LOGIN FLOW
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -51,20 +60,36 @@ const Auth = () => {
 
         if (error) throw error;
 
-        const { data: profile } = await supabase
+        // Check if profile exists
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('role')
           .eq('id', data.user.id)
-          .single();
+          .maybeSingle();
+
+        if (profileError) {
+          console.error('Profile fetch error:', profileError);
+          throw new Error('Failed to fetch profile');
+        }
+
+        if (!profile) {
+          // Profile doesn't exist - this shouldn't happen
+          await supabase.auth.signOut();
+          toast.error('Profile not found. Please contact support or sign up again.');
+          return;
+        }
 
         toast.success("Welcome back!");
 
-        if (profile?.role === 'food_giver') {
-          navigate('/giver-dashboard');
+        // Redirect based on role
+        if (profile.role === 'food_giver') {
+          navigate('/giver-dashboard', { replace: true });
         } else {
-          navigate('/receiver-dashboard');
+          navigate('/receiver-dashboard', { replace: true });
         }
+
       } else {
+        // SIGNUP FLOW
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -79,15 +104,49 @@ const Auth = () => {
 
         if (error) throw error;
 
+        if (!data.user) {
+          throw new Error('Signup failed - no user returned');
+        }
+
+        // Wait a moment for trigger to create profile
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Check if profile was created by trigger
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id, role')
+          .eq('id', data.user.id)
+          .maybeSingle();
+
+        if (!profile) {
+          // Trigger didn't work, manually create profile
+          console.log('Trigger failed, creating profile manually...');
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              id: data.user.id,
+              email: email,
+              full_name: fullName,
+              role: role,
+            });
+
+          if (profileError && profileError.code !== '23505') {
+            console.error('Profile creation error:', profileError);
+            // Don't throw, continue anyway
+          }
+        }
+
         toast.success("Account created! Redirecting...");
 
+        // Redirect based on role
         if (role === 'food_giver') {
-          navigate('/giver-dashboard');
+          navigate('/giver-dashboard', { replace: true });
         } else {
-          navigate('/receiver-dashboard');
+          navigate('/receiver-dashboard', { replace: true });
         }
       }
     } catch (error: any) {
+      console.error('Auth error:', error);
       toast.error(error.message || "Authentication failed");
     } finally {
       setLoading(false);
