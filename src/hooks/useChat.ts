@@ -9,8 +9,13 @@ export const useChat = (otherUserId: string | null) => {
 
   useEffect(() => {
     const getCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUserId(user?.id || null);
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) throw error;
+        setCurrentUserId(user?.id || null);
+      } catch (error) {
+        console.error('Error getting current user:', error);
+      }
     };
     getCurrentUser();
   }, []);
@@ -20,7 +25,6 @@ export const useChat = (otherUserId: string | null) => {
       setConversationId(null);
       return;
     }
-
     initConversation();
   }, [otherUserId, currentUserId]);
 
@@ -29,39 +33,60 @@ export const useChat = (otherUserId: string | null) => {
 
     try {
       setLoading(true);
+      
       const { data, error } = await supabase.rpc('get_or_create_conversation', {
         other_user_id: otherUserId
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('RPC error:', error);
+        throw error;
+      }
+
+      if (!data) {
+        throw new Error('No conversation ID returned');
+      }
+
       setConversationId(data);
     } catch (error: any) {
       console.error('Error initializing conversation:', error);
-      toast.error('Failed to start conversation');
+      toast.error('Failed to start conversation. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const sendMessage = async (messageText: string) => {
-    if (!conversationId || !currentUserId || !messageText.trim()) {
-      return;
+  const sendMessage = async (messageText: string): Promise<boolean> => {
+    if (!conversationId || !currentUserId) {
+      toast.error('Conversation not initialized');
+      return false;
+    }
+
+    if (!messageText.trim()) {
+      return false;
     }
 
     try {
-      const { error } = await supabase.from('messages').insert({
-        conversation_id: conversationId,
-        sender_id: currentUserId,
-        message_text: messageText.trim()
-      });
+      const { error: insertError } = await supabase
+        .from('messages')
+        .insert({
+          conversation_id: conversationId,
+          sender_id: currentUserId,
+          message_text: messageText.trim()
+        });
 
-      if (error) throw error;
+      if (insertError) throw insertError;
 
       // Update last_message_at in conversation
-      await supabase
+      const { error: updateError } = await supabase
         .from('conversations')
         .update({ last_message_at: new Date().toISOString() })
         .eq('id', conversationId);
+
+      if (updateError) {
+        console.error('Error updating conversation timestamp:', updateError);
+        // Don't throw - message was sent successfully
+      }
 
       return true;
     } catch (error: any) {
