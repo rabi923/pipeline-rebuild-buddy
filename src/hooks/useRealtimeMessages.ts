@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export type Message = {
@@ -17,6 +17,17 @@ export type Message = {
 export const useRealtimeMessages = (conversationId: string | null) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const currentUserIdRef = useRef<string | null>(null);
+
+  // Get current user ID once
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      currentUserIdRef.current = user?.id || null;
+    };
+    getCurrentUser();
+  }, []);
 
   useEffect(() => {
     if (!conversationId) {
@@ -25,23 +36,38 @@ export const useRealtimeMessages = (conversationId: string | null) => {
       return;
     }
 
+    let mounted = true;
+
     // Fetch initial messages
     const fetchMessages = async () => {
-      const { data, error } = await supabase
-        .from('messages')
-        .select(`
-          *,
-          sender:profiles!sender_id(full_name, profile_picture_url)
-        `)
-        .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: true });
+      try {
+        setLoading(true);
+        setError(null);
 
-      if (error) {
-        console.error('Error fetching messages:', error);
-      } else {
-        setMessages(data || []);
+        const { data, error: fetchError } = await supabase
+          .from('messages')
+          .select(`
+            *,
+            sender:profiles!sender_id(full_name, profile_picture_url)
+          `)
+          .eq('conversation_id', conversationId)
+          .order('created_at', { ascending: true });
+
+        if (fetchError) throw fetchError;
+
+        if (mounted) {
+          setMessages(data || []);
+        }
+      } catch (err: any) {
+        console.error('Error fetching messages:', err);
+        if (mounted) {
+          setError(err.message || 'Failed to load messages');
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
-      setLoading(false);
     };
 
     fetchMessages();
@@ -58,25 +84,35 @@ export const useRealtimeMessages = (conversationId: string | null) => {
           filter: `conversation_id=eq.${conversationId}`
         },
         async (payload) => {
-          // Fetch sender info for new message
-          const { data: senderData } = await supabase
-            .from('profiles')
-            .select('full_name, profile_picture_url')
-            .eq('id', payload.new.sender_id)
-            .single();
+          try {
+            // Fetch sender info for new message
+            const { data: senderData, error: senderError } = await supabase
+              .from('profiles')
+              .select('full_name, profile_picture_url')
+              .eq('id', payload.new.sender_id)
+              .maybeSingle();
 
-          const newMessage = {
-            ...payload.new,
-            sender: senderData
-          } as Message;
+            if (senderError) {
+              console.error('Error fetching sender:', senderError);
+            }
 
-          setMessages(prev => [...prev, newMessage]);
+            const newMessage = {
+              ...payload.new,
+              sender: senderData || undefined
+            } as Message;
 
-          // Mark as read if I'm not the sender
-          if (payload.new.sender_id !== (await supabase.auth.getUser()).data.user?.id) {
-            await supabase.rpc('mark_messages_as_read', {
-              p_conversation_id: conversationId
-            });
+            if (mounted) {
+              setMessages(prev => [...prev, newMessage]);
+            }
+
+            // Mark as read if I'm not the sender
+            if (payload.new.sender_id !== currentUserIdRef.current) {
+              await supabase.rpc('mark_messages_as_read', {
+                p_conversation_id: conversationId
+              });
+            }
+          } catch (err) {
+            console.error('Error handling new message:', err);
           }
         }
       )
@@ -89,19 +125,22 @@ export const useRealtimeMessages = (conversationId: string | null) => {
           filter: `conversation_id=eq.${conversationId}`
         },
         (payload) => {
-          setMessages(prev =>
-            prev.map(msg =>
-              msg.id === payload.new.id ? { ...msg, ...payload.new } : msg
-            )
-          );
+          if (mounted) {
+            setMessages(prev =>
+              prev.map(msg =>
+                msg.id === payload.new.id ? { ...msg, ...payload.new } : msg
+              )
+            );
+          }
         }
       )
       .subscribe();
 
     return () => {
+      mounted = false;
       supabase.removeChannel(channel);
     };
   }, [conversationId]);
 
-  return { messages, loading };
+  return { messages, loading, error };
 };
