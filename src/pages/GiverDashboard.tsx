@@ -4,25 +4,27 @@ import { supabase } from "@/integrations/supabase/client";
 import MapView from "@/components/Map/MapView";
 import ChatList from "@/components/Chat/ChatList";
 import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
+// import { toast } from "sonner";
+import { useAuthSession } from '@/hooks/useAuthSession'; 
 
 const GiverDashboard = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true);
   const [currentTab, setCurrentTab] = useState('map');
+  const { loading } = useAuthSession('food_giver');
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
+  // useEffect(() => {
+  //   checkAuth();
+  // }, []);
 
-  const checkAuth = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
+  // const checkAuth = async () => {
+  //   try {
+  //     const { data: { session } } = await supabase.auth.getSession();
       
-      if (!session) {
-        navigate('/auth', { replace: true });
-        return;
-      }
+  //     if (!session) {
+  //       navigate('/auth', { replace: true });
+  //       return;
+  //     }
 
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
