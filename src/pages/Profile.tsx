@@ -1,26 +1,29 @@
-import { useState, useEffect } from 'react';
+// import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+// import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft } from 'lucide-react';
+// ADD this new import
+import { useAuthSession } from '@/hooks/useAuthSession';
 
 const Profile = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<any>(null);
+  const { profile, loading } = useAuthSession();
+  // const [loading, setLoading] = useState(true);
+  // const [profile, setProfile] = useState<any>(null);
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
+  // useEffect(() => {
+  //   fetchProfile();
+  // }, []);
 
-  const fetchProfile = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
+  // const fetchProfile = async () => {
+  //   const { data: { user } } = await supabase.auth.getUser();
+  //   if (!user) {
+  //     navigate('/auth');
+  //     return;
+  //   }
 
-    const { data, error } = await supabase
+  const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', user.id)
