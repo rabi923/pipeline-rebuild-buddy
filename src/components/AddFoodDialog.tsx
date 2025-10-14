@@ -117,7 +117,7 @@ const AddFoodDialog = ({ open, onOpenChange, onSuccess }: AddFoodDialogProps) =>
       setFormData({ title: "", description: "", quantity: "", pickup_time: "", location: "", food_type: "", latitude: null, longitude: null });
       setSelectedFiles([]);
       setImagePreviews([]);
-    } catch (error: any) {
+    } catch (error: any) => {
       toast.error(error.message || "Failed to create listing");
     } finally {
       setLoading(false);
@@ -126,6 +126,7 @@ const AddFoodDialog = ({ open, onOpenChange, onSuccess }: AddFoodDialogProps) =>
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
+      {/* --- THIS IS THE ONLY CHANGE --- */}
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto z-[2000]">
         <DialogHeader>
           <DialogTitle className="text-2xl">Add Food Listing</DialogTitle>
@@ -185,7 +186,6 @@ const AddFoodDialog = ({ open, onOpenChange, onSuccess }: AddFoodDialogProps) =>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="quantity">Quantity *</Label>
-              {/* --- THIS LINE IS NOW FIXED --- */}
               <Input id="quantity" placeholder="e.g., 2 plates, 5kg" value={formData.quantity} onChange={(e) => setFormData({ ...formData, quantity: e.target.value })} required />
             </div>
             <div className="space-y-2">
