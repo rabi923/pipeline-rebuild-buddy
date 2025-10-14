@@ -5,7 +5,6 @@ import MapView from "@/components/Map/MapView";
 import ChatList from "@/components/Chat/ChatList";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 
 const ReceiverDashboard = () => {
   const navigate = useNavigate();
@@ -21,26 +20,53 @@ const ReceiverDashboard = () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        navigate('/auth');
+        navigate('/auth', { replace: true });
         return;
       }
 
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', session.user.id)
-        .maybeSingle(); // Changed from .single() to .maybeSingle()
+        .maybeSingle();
 
-      if (profile?.role !== 'food_receiver') {
-        navigate('/giver-dashboard');
+      if (profileError) {
+        console.error('Profile fetch error:', profileError);
+        toast.error('Failed to load profile. Please login again.');
+        await supabase.auth.signOut();
+        navigate('/auth', { replace: true });
         return;
       }
 
+      // Profile doesn't exist
+      if (!profile) {
+        toast.error('Profile not found. Please sign up again.');
+        await supabase.auth.signOut();
+        navigate('/auth', { replace: true });
+        return;
+      }
+
+      // Profile exists but wrong role
+      if (profile.role === 'food_giver') {
+        navigate('/giver-dashboard', { replace: true });
+        return;
+      }
+
+      // Profile exists but role is neither giver nor receiver
+      if (profile.role !== 'food_receiver') {
+        toast.error('Invalid user role. Please contact support.');
+        await supabase.auth.signOut();
+        navigate('/auth', { replace: true });
+        return;
+      }
+
+      // All good - user is a food receiver
       setLoading(false);
+
     } catch (error) {
       console.error('Auth error:', error);
       toast.error('Authentication error. Please login again.');
-      navigate('/auth');
+      navigate('/auth', { replace: true });
     }
   };
 
