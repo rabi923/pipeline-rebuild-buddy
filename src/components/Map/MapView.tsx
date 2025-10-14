@@ -11,7 +11,25 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import FoodCard from '../FoodCard';
 
 // --- CHANGE: Import our central FoodListing type
-import { FoodListing } from '@/types'; 
+// --- ADD THESE NEW TYPE DEFINITIONS DIRECTLY IN THIS FILE ---
+// This defines the shape of the 'giver' profile attached to each listing
+interface GiverProfile {
+  id: string;
+  full_name: string | null;
+  phone: string | null;
+  profile_picture_url: string | null;
+  organization_name: string | null;
+}
+// This is the main type for your food listings.
+export interface FoodListing {
+  id: string; created_at: string; giver_id: string; title: string;
+  description: string | null; quantity: string; pickup_time: string;
+  photo_url: string | null; image_urls: string[] | null; location: string;
+  latitude: number | null; longitude: number | null; food_type: string | null;
+  is_available: boolean; view_count: number; updated_at: string;
+  giver: GiverProfile | null;
+}
+// --- END OF NEW CODE ---
 
 import BottomNavigation from './BottomNavigation';
 import AddFoodDialog from '../AddFoodDialog';
