@@ -49,7 +49,7 @@ const AddFoodDialog = ({ open, onOpenChange, onSuccess }: AddFoodDialogProps) =>
       const reader = new FileReader();
       const preview = await new Promise<string>((resolve) => {
         reader.onloadend = () => resolve(reader.result as string);
-        reader.readDataURL(file);
+        reader.readAsDataURL(file);
       });
       newPreviews.push(preview);
     }

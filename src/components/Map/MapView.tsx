@@ -1,6 +1,6 @@
 // src/components/Map/MapView.tsx (Final, Corrected Version)
 
-import React, {'useState', 'useEffect', 'useRef', 'useCallback'} from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 // --- CHANGE: We no longer need ReactDOMServer
@@ -120,24 +120,25 @@ const MapView = ({ userRole, onTabChange }: MapViewProps) => {
     // Clear any markers from the previous data load
     dataMarkersRef.current.clearLayers();
   
-    // Use the FoodListing type for full type safety
-    data.forEach((listing: FoodListing) => { 
-      if (listing.latitude && listing.longitude) {
-        const marker = L.marker([listing.latitude, listing.longitude]);
+    // Handle both food_listings (for receivers) and food_requests (for givers)
+    data.forEach((item: any) => { 
+      if (item.latitude && item.longitude) {
+        const marker = L.marker([item.latitude, item.longitude]);
         
-        // --- THIS IS THE IMPORTANT CHANGE ---
-        // Instead of creating a complex popup, the marker's click event
-        // now simply updates our state. This will trigger the Dialog to open.
+        // For food_receiver role, data is food_listings
+        // For food_giver role, data is food_requests (not shown in popup)
         marker.on('click', () => {
-          setSelectedListing(listing);
+          // Only set selected listing if it's a food listing (receiver view)
+          if (userRole === 'food_receiver' && item.giver_id) {
+            setSelectedListing(item as FoodListing);
+          }
         });
         
         // Add the configured marker to the map
         marker.addTo(dataMarkersRef.current);
       }
     });
-  // We simplify the dependencies as the marker logic no longer depends on role or userId
-  }, [data]);
+  }, [data, userRole]);
   // --- END OF KEY MODIFIED SECTION ---
 
 
@@ -154,7 +155,11 @@ const MapView = ({ userRole, onTabChange }: MapViewProps) => {
     <div className="relative h-screen w-full flex">
       <div className="flex-1 relative">
         <div id="map" ref={mapContainerRef} style={{ height: '100vh', width: '100%' }} />
-        {(locationLoading || dataLoading) && ( /* This part is unchanged */ )}
+        {(locationLoading || dataLoading) && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-[998]">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        )}
       </div>
 
       <div className="hidden md:block w-96 border-l bg-background">
