@@ -22,6 +22,7 @@ export const useMapData = (
 
       try {
         if (userRole === 'food_receiver') {
+          // Receivers see all available food listings from all givers
           const { data: listings, error } = await supabase
             .from('food_listings')
             .select(`
@@ -46,11 +47,19 @@ export const useMapData = (
 
           return Array.isArray(listings) ? listings : [];
         } else {
-          const { data: requests, error } = await supabase
-            .from('food_requests')
+          // Givers see their own food listings
+          const { data: { user } } = await supabase.auth.getUser();
+          
+          if (!user) {
+            console.error('No authenticated user found');
+            return [];
+          }
+
+          const { data: listings, error } = await supabase
+            .from('food_listings')
             .select(`
               *,
-              receiver:profiles!receiver_id (
+              giver:profiles!giver_id (
                 id,
                 full_name,
                 phone,
@@ -58,16 +67,17 @@ export const useMapData = (
                 organization_name
               )
             `)
-            .eq('status', 'active')
-            .gte('needed_by', new Date().toISOString())
-            .order('urgency_level', { ascending: false });
+            .eq('giver_id', user.id)
+            .not('latitude', 'is', null)
+            .not('longitude', 'is', null)
+            .order('created_at', { ascending: false });
 
           if (error) {
-            console.error('Error fetching food requests:', error);
+            console.error('Error fetching giver listings:', error);
             return [];
           }
 
-          return Array.isArray(requests) ? requests : [];
+          return Array.isArray(listings) ? listings : [];
         }
       } catch (err) {
         console.error('Unexpected error in useMapData:', err);
