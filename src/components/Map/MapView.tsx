@@ -162,13 +162,33 @@ const MapView = ({ userRole, onTabChange }: MapViewProps) => {
         )}
       </div>
 
+      {/* Desktop sidebar - always visible */}
       <div className="hidden md:block w-96 border-l bg-background">
-        <FoodListPanel data={data} loading={dataLoading} userRole={userRole} userLocation={userLocation} currentUserId={currentUserId} onUpdate={refetch} onMessageClick={handleMessageClick}/>
+        <FoodListPanel 
+          data={data} 
+          loading={dataLoading} 
+          userRole={userRole} 
+          userLocation={userLocation} 
+          currentUserId={currentUserId} 
+          onUpdate={refetch} 
+          onMessageClick={handleMessageClick}
+        />
       </div>
 
-      <div className="md:hidden absolute bottom-24 left-0 right-0 h-[45vh] bg-background border-t shadow-lg z-[999] overflow-hidden">
-        <FoodListPanel data={data} loading={dataLoading} userRole={userRole} userLocation={userLocation} currentUserId={currentUserId} onUpdate={refetch} onMessageClick={handleMessageClick}/>
-      </div>
+      {/* Mobile panel - only for receivers */}
+      {userRole === 'food_receiver' && (
+        <div className="md:hidden absolute bottom-24 left-0 right-0 h-[45vh] bg-background border-t shadow-lg z-[999] overflow-hidden">
+          <FoodListPanel 
+            data={data} 
+            loading={dataLoading} 
+            userRole={userRole} 
+            userLocation={userLocation} 
+            currentUserId={currentUserId} 
+            onUpdate={refetch} 
+            onMessageClick={handleMessageClick}
+          />
+        </div>
+      )}
 
       <div className="relative z-[1000]">
         <BottomNavigation currentTab="map" onTabChange={handleTabChange} userRole={userRole}/>

@@ -1,4 +1,4 @@
-import { Home, Plus, MessageCircle } from 'lucide-react';
+import { Home, Plus, MessageCircle, List } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface BottomNavigationProps {
@@ -24,6 +24,19 @@ const BottomNavigation = ({ currentTab, onTabChange, userRole }: BottomNavigatio
         <Home className="h-6 w-6" />
         <span className="text-xs mt-1">Map</span>
       </button>
+      
+      {userRole === 'food_giver' && (
+        <button
+          onClick={() => handleClick('listings')}
+          className={cn(
+            "flex flex-col items-center justify-center min-w-[60px] h-full transition-colors",
+            currentTab === 'listings' ? "text-primary" : "text-muted-foreground"
+          )}
+        >
+          <List className="h-6 w-6" />
+          <span className="text-xs mt-1">My Food</span>
+        </button>
+      )}
       
       <button
         onClick={() => handleClick('add')}

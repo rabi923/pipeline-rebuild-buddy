@@ -1,19 +1,15 @@
 // src/pages/GiverDashboard.tsx
 
-import { useState } from "react"; // useNavigate and supabase are no longer needed here
+import { useState } from "react";
 import MapView from "@/components/Map/MapView";
 import ChatList from "@/components/Chat/ChatList";
+import MyListings from "@/components/MyListings";
 import { Loader2 } from "lucide-react";
-import { useAuthSession } from '@/hooks/useAuthSession'; // Correctly imported
+import { useAuthSession } from '@/hooks/useAuthSession';
 
 const GiverDashboard = () => {
-  // `navigate` is no longer needed because the hook handles navigation
   const [currentTab, setCurrentTab] = useState('map');
-  
-  // This one line correctly handles all authentication and role-checking
-  const { loading } = useAuthSession('food_giver'); 
-
-  // The entire old `checkAuth` function and its `try/catch` block are now deleted.
+  const { loading } = useAuthSession('food_giver');
 
   const handleTabChange = (tab: string) => {
     setCurrentTab(tab);
@@ -29,6 +25,10 @@ const GiverDashboard = () => {
 
   if (currentTab === 'chat') {
     return <ChatList onBack={() => setCurrentTab('map')} />;
+  }
+
+  if (currentTab === 'listings') {
+    return <MyListings onBack={() => setCurrentTab('map')} />;
   }
 
   return (
