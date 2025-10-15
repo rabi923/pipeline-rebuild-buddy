@@ -166,7 +166,7 @@ const MapView = ({ userRole, onTabChange }: MapViewProps) => {
         <FoodListPanel data={data} loading={dataLoading} userRole={userRole} userLocation={userLocation} currentUserId={currentUserId} onUpdate={refetch} onMessageClick={handleMessageClick}/>
       </div>
 
-      <div className="md:hidden absolute bottom-20 left-0 right-0 max-h-[40vh] bg-background border-t z-[999]">
+      <div className="md:hidden absolute bottom-24 left-0 right-0 h-[45vh] bg-background border-t shadow-lg z-[999] overflow-hidden">
         <FoodListPanel data={data} loading={dataLoading} userRole={userRole} userLocation={userLocation} currentUserId={currentUserId} onUpdate={refetch} onMessageClick={handleMessageClick}/>
       </div>
 
