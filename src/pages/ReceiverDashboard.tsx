@@ -3,16 +3,13 @@
 import { useState } from "react";
 import MapView from "@/components/Map/MapView";
 import ChatList from "@/components/Chat/ChatList";
+import MyRequests from "@/components/MyRequests";
 import { Loader2 } from "lucide-react";
-import { useAuthSession } from '@/hooks/useAuthSession'; // Correctly imported
+import { useAuthSession } from '@/hooks/useAuthSession';
 
 const ReceiverDashboard = () => {
   const [currentTab, setCurrentTab] = useState('map');
-
-  // This correctly protects the page for food receivers
-  const { loading } = useAuthSession('food_receiver'); 
-
-  // The old `checkAuth` function and its try/catch block are now fully deleted.
+  const { loading } = useAuthSession('food_receiver');
 
   const handleTabChange = (tab: string) => {
     setCurrentTab(tab);
@@ -28,6 +25,10 @@ const ReceiverDashboard = () => {
 
   if (currentTab === 'chat') {
     return <ChatList onBack={() => setCurrentTab('map')} />;
+  }
+
+  if (currentTab === 'requests') {
+    return <MyRequests onBack={() => setCurrentTab('map')} />;
   }
 
   return (

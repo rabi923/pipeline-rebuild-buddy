@@ -37,6 +37,19 @@ const BottomNavigation = ({ currentTab, onTabChange, userRole }: BottomNavigatio
           <span className="text-xs mt-1">My Food</span>
         </button>
       )}
+
+      {userRole === 'food_receiver' && (
+        <button
+          onClick={() => handleClick('requests')}
+          className={cn(
+            "flex flex-col items-center justify-center min-w-[60px] h-full transition-colors",
+            currentTab === 'requests' ? "text-primary" : "text-muted-foreground"
+          )}
+        >
+          <List className="h-6 w-6" />
+          <span className="text-xs mt-1">My Requests</span>
+        </button>
+      )}
       
       <button
         onClick={() => handleClick('add')}

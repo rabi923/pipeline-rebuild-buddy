@@ -1,19 +1,19 @@
 import { ScrollArea } from '@/components/ui/scroll-area';
-import FoodCard from '../FoodCard';
+import RequestCard from '../RequestCard';
 import { Loader2 } from 'lucide-react';
 import type { LocationCoords } from '@/utils/geolocation';
 
-interface FoodListPanelProps {
+interface RequestListPanelProps {
   data: any[];
   loading: boolean;
   userRole: 'food_giver' | 'food_receiver';
   userLocation: LocationCoords | null;
   currentUserId?: string;
   onUpdate?: () => void;
-  onMessageClick?: (giverId: string) => void;
+  onMessageClick?: (receiverId: string) => void;
 }
 
-const FoodListPanel = ({ 
+const RequestListPanel = ({ 
   data, 
   loading, 
   userRole, 
@@ -21,7 +21,7 @@ const FoodListPanel = ({
   currentUserId,
   onUpdate,
   onMessageClick 
-}: FoodListPanelProps) => {
+}: RequestListPanelProps) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -35,9 +35,7 @@ const FoodListPanel = ({
       <div className="flex items-center justify-center h-full p-4 text-center">
         <div>
           <p className="text-muted-foreground">
-            {userRole === 'food_giver' 
-              ? 'No food requests yet. Check back later!' 
-              : 'No food available nearby. Check back later!'}
+            No food requests available. Check back later!
           </p>
         </div>
       </div>
@@ -48,13 +46,12 @@ const FoodListPanel = ({
     <ScrollArea className="h-full">
       <div className="p-4 space-y-4 pb-24">
         {data.map((item) => (
-          <FoodCard
+          <RequestCard
             key={item.id}
-            listing={item}
-            isOwner={userRole === 'food_giver' && item.giver_id === currentUserId}
-            showContact={userRole === 'food_receiver'}
+            request={item}
+            isOwner={userRole === 'food_receiver' && item.receiver_id === currentUserId}
+            showContact={userRole === 'food_giver'}
             onUpdate={onUpdate}
-            userLocation={userLocation}
             onMessageClick={onMessageClick}
           />
         ))}
@@ -63,4 +60,4 @@ const FoodListPanel = ({
   );
 };
 
-export default FoodListPanel;
+export default RequestListPanel;

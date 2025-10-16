@@ -30,7 +30,6 @@ export const useMapData = (
               giver:profiles!giver_id (
                 id,
                 full_name,
-                phone,
                 profile_picture_url,
                 organization_name
               )
@@ -47,37 +46,29 @@ export const useMapData = (
 
           return Array.isArray(listings) ? listings : [];
         } else {
-          // Givers see their own food listings
-          const { data: { user } } = await supabase.auth.getUser();
-          
-          if (!user) {
-            console.error('No authenticated user found');
-            return [];
-          }
-
-          const { data: listings, error } = await supabase
-            .from('food_listings')
+          // Givers see all active food requests from receivers
+          const { data: requests, error } = await supabase
+            .from('food_requests')
             .select(`
               *,
-              giver:profiles!giver_id (
+              receiver:profiles!receiver_id (
                 id,
                 full_name,
-                phone,
                 profile_picture_url,
                 organization_name
               )
             `)
-            .eq('giver_id', user.id)
+            .eq('status', 'active')
             .not('latitude', 'is', null)
             .not('longitude', 'is', null)
             .order('created_at', { ascending: false });
 
           if (error) {
-            console.error('Error fetching giver listings:', error);
+            console.error('Error fetching food requests:', error);
             return [];
           }
 
-          return Array.isArray(listings) ? listings : [];
+          return Array.isArray(requests) ? requests : [];
         }
       } catch (err) {
         console.error('Unexpected error in useMapData:', err);

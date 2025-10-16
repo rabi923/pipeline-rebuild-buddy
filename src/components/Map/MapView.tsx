@@ -3,8 +3,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-// --- CHANGE: We no longer need ReactDOMServer
-// import ReactDOMServer from 'react-dom/server'; 
 
 // --- CHANGE: Import the Dialog component and FoodCard
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -33,7 +31,9 @@ export interface FoodListing {
 
 import BottomNavigation from './BottomNavigation';
 import AddFoodDialog from '../AddFoodDialog';
+import AddRequestDialog from '../AddRequestDialog';
 import FoodListPanel from './FoodListPanel';
+import RequestListPanel from './RequestListPanel';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { useMapData } from '@/hooks/useMapData';
 import { Loader2 } from 'lucide-react'; // MessageSquare is no longer needed here
@@ -164,21 +164,45 @@ const MapView = ({ userRole, onTabChange }: MapViewProps) => {
 
       {/* Desktop sidebar - always visible */}
       <div className="hidden md:block w-96 border-l bg-background">
-        <FoodListPanel 
-          data={data} 
-          loading={dataLoading} 
-          userRole={userRole} 
-          userLocation={userLocation} 
-          currentUserId={currentUserId} 
-          onUpdate={refetch} 
-          onMessageClick={handleMessageClick}
-        />
+        {userRole === 'food_receiver' ? (
+          <FoodListPanel 
+            data={data} 
+            loading={dataLoading} 
+            userRole={userRole} 
+            userLocation={userLocation} 
+            currentUserId={currentUserId} 
+            onUpdate={refetch} 
+            onMessageClick={handleMessageClick}
+          />
+        ) : (
+          <RequestListPanel 
+            data={data} 
+            loading={dataLoading} 
+            userRole={userRole} 
+            userLocation={userLocation} 
+            currentUserId={currentUserId} 
+            onUpdate={refetch} 
+            onMessageClick={handleMessageClick}
+          />
+        )}
       </div>
 
-      {/* Mobile panel - only for receivers */}
-      {userRole === 'food_receiver' && (
+      {/* Mobile panel */}
+      {userRole === 'food_receiver' ? (
         <div className="md:hidden absolute bottom-24 left-0 right-0 h-[45vh] bg-background border-t shadow-lg z-[999] overflow-hidden">
           <FoodListPanel 
+            data={data} 
+            loading={dataLoading} 
+            userRole={userRole} 
+            userLocation={userLocation} 
+            currentUserId={currentUserId} 
+            onUpdate={refetch} 
+            onMessageClick={handleMessageClick}
+          />
+        </div>
+      ) : (
+        <div className="md:hidden absolute bottom-24 left-0 right-0 h-[45vh] bg-background border-t shadow-lg z-[999] overflow-hidden">
+          <RequestListPanel 
             data={data} 
             loading={dataLoading} 
             userRole={userRole} 
@@ -217,6 +241,10 @@ const MapView = ({ userRole, onTabChange }: MapViewProps) => {
 
       {userRole === 'food_giver' && (
         <AddFoodDialog open={showAddDialog} onOpenChange={setShowAddDialog} onSuccess={() => { refetch(); setShowAddDialog(false); }}/>
+      )}
+
+      {userRole === 'food_receiver' && (
+        <AddRequestDialog open={showAddDialog} onOpenChange={setShowAddDialog} onSuccess={() => { refetch(); setShowAddDialog(false); }}/>
       )}
     </div>
   );
