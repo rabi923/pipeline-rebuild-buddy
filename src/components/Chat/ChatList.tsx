@@ -13,7 +13,6 @@ const formatTimestamp = (date: Date) => {
   return format(date, 'MMM d');
 };
 
-// This component now expects currentUser to be passed in as a prop
 interface ChatListProps {
   currentUser: User;
   onBack: () => void;
@@ -21,14 +20,18 @@ interface ChatListProps {
 
 const ChatList = ({ currentUser, onBack }: ChatListProps) => {
   const [selectedConversation, setSelectedConversation] = useState<ConversationDetails | null>(null);
-  const { conversations, loading } = useConversations();
 
-  // Show the ChatWindow when a conversation is selected
+  // *** THE CRITICAL CHANGE IS HERE ***
+  // We now pass the currentUser prop into our hook.
+  const { conversations, loading } = useConversations(currentUser);
+
+  // We have REMOVED the useEffect that fetched the user from this component.
+
   if (selectedConversation) {
     return (
       <ChatWindow
         conversationId={selectedConversation.id}
-        currentUser={currentUser} // Pass the prop down
+        currentUser={currentUser}
         otherUser={{
           id: selectedConversation.other_user_id,
           full_name: selectedConversation.other_user_name || 'Unknown User',
@@ -47,21 +50,18 @@ const ChatList = ({ currentUser, onBack }: ChatListProps) => {
         </Button>
         <h1 className="text-xl font-bold">Messages</h1>
       </header>
-
       <div className="divide-y">
         {loading && (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         )}
-
         {!loading && conversations.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
             <MessageCircle className="h-12 w-12 text-muted-foreground mb-3" />
             <p className="text-muted-foreground">No conversations yet.</p>
           </div>
         )}
-
         {conversations.map((conv) => (
           <button
             key={conv.id}
