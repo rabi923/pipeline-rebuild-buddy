@@ -1,131 +1,85 @@
-import { useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth'; // Assuming you have a standard hook to get the current user
+import { useEffect } from 'react';
 
-export type Conversation = {
-  id: string;
-  user1_id: string;
-  user2_id: string;
-  last_message_at: string;
-  created_at: string;
-  other_user: {
-    id: string;
-    full_name: string | null;
-    profile_picture_url: string | null;
-  };
-  last_message?: {
-    message_text: string;
-    sender_id: string;
-  };
+// This TypeScript type defines the exact shape of the data
+// our new SQL function ('get_user_conversations_with_details') returns.
+export type ConversationDetails = {
+  id: string; // The conversation_id
+  other_user_id: string;
+  other_user_name: string | null;
+  other_user_avatar: string | null;
+  last_message_text: string | null;
+  last_message_at: string | null;
   unread_count: number;
 };
 
 export const useConversations = () => {
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const { user } = useAuth(); // Get the currently authenticated user
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setLoading(false);
-        return;
+  // The main query to fetch all conversations. It's now a single RPC call.
+  const {
+    data: conversations,
+    isLoading,
+    error,
+  } = useQuery<ConversationDetails[]>({
+    // The query key uniquely identifies this data in the cache.
+    // It includes the user's ID so it refetches if the user changes.
+    queryKey: ['conversations', user?.id],
+
+    // The query function itself:
+    queryFn: async () => {
+      // Don't run if there's no user.
+      if (!user) return [];
+
+      // Call the database function we created in Step 1.
+      const { data, error } = await supabase.rpc('get_user_conversations_with_details', {
+        p_user_id: user.id, // Pass the current user's ID as the parameter
+      });
+
+      if (error) {
+        console.error('Error fetching conversations:', error);
+        throw new Error(error.message);
       }
-      setCurrentUserId(user.id);
-      await fetchConversations(user.id);
-    };
-    init();
-  }, []);
+      return data || [];
+    },
 
-  const fetchConversations = async (userId: string) => {
-    try {
-      setLoading(true);
-      
-      // Fetch conversations where user is participant
-      const { data: convData, error: convError } = await supabase
-        .from('conversations')
-        .select('*')
-        .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
-        .order('last_message_at', { ascending: false });
+    // This ensures the query only runs when the user object is available.
+    enabled: !!user,
+  });
 
-      if (convError) throw convError;
-
-      if (!convData || convData.length === 0) {
-        setConversations([]);
-        setLoading(false);
-        return;
-      }
-
-      // Get other user profiles and last messages
-      const conversationsWithDetails = await Promise.all(
-        convData.map(async (conv) => {
-          const otherUserId = conv.user1_id === userId ? conv.user2_id : conv.user1_id;
-          
-          // Fetch other user profile
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('id, full_name, profile_picture_url')
-            .eq('id', otherUserId)
-            .single();
-
-          // Fetch last message
-          const { data: lastMsg } = await supabase
-            .from('messages')
-            .select('message_text, sender_id')
-            .eq('conversation_id', conv.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          // Count unread messages
-          const { count } = await supabase
-            .from('messages')
-            .select('*', { count: 'exact', head: true })
-            .eq('conversation_id', conv.id)
-            .neq('sender_id', userId)
-            .is('read_at', null);
-
-          return {
-            ...conv,
-            other_user: profile || { id: otherUserId, full_name: 'Unknown', profile_picture_url: null },
-            last_message: lastMsg,
-            unread_count: count || 0,
-          };
-        })
-      );
-
-      setConversations(conversationsWithDetails);
-    } catch (error) {
-      console.error('Error fetching conversations:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // This `useEffect` sets up a real-time listener for new messages.
   useEffect(() => {
-    if (!currentUserId) return;
+    if (!user) return;
 
-    // Subscribe to conversation updates
     const channel = supabase
-      .channel('conversations-updates')
+      .channel('public:messages') // A unique channel name
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'conversations',
-          filter: `user1_id=eq.${currentUserId},user2_id=eq.${currentUserId}`,
-        },
-        () => {
-          fetchConversations(currentUserId);
+        { event: 'INSERT', schema: 'public', table: 'messages' },
+        (payload) => {
+          // When a new message is inserted into the database,
+          // invalidate our query. This tells react-query to refetch the
+          // conversation list, ensuring the UI is always up-to-date
+          // with the latest message, order, and unread counts.
+          queryClient.invalidateQueries({ queryKey: ['conversations', user.id] });
         }
       )
       .subscribe();
 
+    // Cleanup function: remove the channel subscription when the component unmounts.
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [currentUserId]);
+  }, [user, queryClient]);
 
-  return { conversations, loading, refetch: () => currentUserId && fetchConversations(currentUserId) };
+
+  // Return the data and loading state for the UI to use.
+  return {
+    conversations: conversations || [],
+    loading: isLoading,
+    error,
+  };
 };
