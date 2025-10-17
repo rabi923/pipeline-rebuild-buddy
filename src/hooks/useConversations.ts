@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth'; // Assuming you have a standard hook to get the current user
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import type { User } from '@supabase/supabase-js';
 
 // This TypeScript type defines the exact shape of the data
 // our new SQL function ('get_user_conversations_with_details') returns.
@@ -16,22 +16,33 @@ export type ConversationDetails = {
 };
 
 export const useConversations = () => {
-  const { user } = useAuth(); // Get the currently authenticated user
   const queryClient = useQueryClient();
+  // State to hold the current user, fetched once.
+  const [user, setUser] = useState<User | null>(null);
 
-  // The main query to fetch all conversations. It's now a single RPC call.
+  // Get the current user session when the hook is first used.
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setUser(data.user);
+    };
+    fetchUser();
+  }, []);
+
+
+  // The main query to fetch all conversations.
   const {
     data: conversations,
     isLoading,
     error,
   } = useQuery<ConversationDetails[]>({
-    // The query key uniquely identifies this data in the cache.
-    // It includes the user's ID so it refetches if the user changes.
+    // The query key uniquely identifies this data. It includes the user's ID
+    // so it refetches if the user were to ever change.
     queryKey: ['conversations', user?.id],
 
     // The query function itself:
     queryFn: async () => {
-      // Don't run if there's no user.
+      // Don't run if there's no user. This is important.
       if (!user) return [];
 
       // Call the database function we created in Step 1.
@@ -55,15 +66,14 @@ export const useConversations = () => {
     if (!user) return;
 
     const channel = supabase
-      .channel('public:messages') // A unique channel name
+      .channel('public:messages')
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },
         (payload) => {
-          // When a new message is inserted into the database,
-          // invalidate our query. This tells react-query to refetch the
-          // conversation list, ensuring the UI is always up-to-date
-          // with the latest message, order, and unread counts.
+          // When a new message is inserted, invalidate the query.
+          // This tells react-query to refetch the conversation list,
+          // ensuring the UI is always up-to-date.
           queryClient.invalidateQueries({ queryKey: ['conversations', user.id] });
         }
       )
@@ -75,11 +85,10 @@ export const useConversations = () => {
     };
   }, [user, queryClient]);
 
-
-  // Return the data and loading state for the UI to use.
   return {
+    // We combine the initial user loading with the conversation loading states.
     conversations: conversations || [],
-    loading: isLoading,
+    loading: isLoading || !user,
     error,
   };
 };
