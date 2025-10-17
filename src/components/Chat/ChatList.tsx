@@ -1,25 +1,49 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import type { User } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, MessageCircle, Loader2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useConversations } from '@/hooks/useConversations';
+import { useConversations, ConversationDetails } from '@/hooks/useConversations';
 import ChatWindow from './ChatWindow';
-import { format } from 'date-fns';
+import { format, isToday, isYesterday } from 'date-fns';
+
+// A helper function to format timestamps nicely
+const formatTimestamp = (date: Date) => {
+  if (isToday(date)) {
+    return format(date, 'p'); // e.g., 5:30 PM
+  }
+  if (isYesterday(date)) {
+    return 'Yesterday';
+  }
+  return format(date, 'MMM d'); // e.g., Oct 15
+};
 
 const ChatList = ({ onBack }: { onBack: () => void }) => {
-  const [selectedConversation, setSelectedConversation] = useState<{
-    userId: string;
-    userName: string;
-    userAvatar?: string | null;
-  } | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [selectedConversation, setSelectedConversation] = useState<ConversationDetails | null>(null);
   const { conversations, loading } = useConversations();
 
-  if (selectedConversation) {
+  // Fetch the current user when the component loads
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setCurrentUser(data.user);
+    };
+    fetchUser();
+  }, []);
+
+  // Show the ChatWindow when a conversation is selected
+  if (selectedConversation && currentUser) {
     return (
       <ChatWindow
-        otherUserId={selectedConversation.userId}
-        otherUserName={selectedConversation.userName}
-        otherUserAvatar={selectedConversation.userAvatar}
+        conversationId={selectedConversation.id}
+        currentUser={currentUser} // Pass the full current user object
+        otherUser={{ // Construct the otherUser object from the conversation details
+          id: selectedConversation.other_user_id,
+          full_name: selectedConversation.other_user_name || 'Unknown User',
+          profile_picture_url: selectedConversation.other_user_avatar,
+        }}
         onBack={() => setSelectedConversation(null)}
       />
     );
@@ -27,12 +51,12 @@ const ChatList = ({ onBack }: { onBack: () => void }) => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="h-16 border-b flex items-center px-4 gap-3 bg-card">
+      <header className="h-16 border-b flex items-center px-4 gap-3 bg-card sticky top-0 z-10">
         <Button variant="ghost" size="icon" onClick={onBack}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <h1 className="text-xl font-bold">Messages</h1>
-      </div>
+      </header>
 
       <div className="divide-y">
         {loading && (
@@ -46,7 +70,7 @@ const ChatList = ({ onBack }: { onBack: () => void }) => {
             <MessageCircle className="h-12 w-12 text-muted-foreground mb-3" />
             <p className="text-muted-foreground">No conversations yet</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Start chatting with food givers or receivers
+              Start chatting to see your messages here.
             </p>
           </div>
         )}
@@ -54,43 +78,35 @@ const ChatList = ({ onBack }: { onBack: () => void }) => {
         {conversations.map((conv) => (
           <button
             key={conv.id}
-            onClick={() =>
-              setSelectedConversation({
-                userId: conv.other_user.id,
-                userName: conv.other_user.full_name || 'Unknown User',
-                userAvatar: conv.other_user.profile_picture_url,
-              })
-            }
+            onClick={() => setSelectedConversation(conv)}
             className="w-full flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors text-left"
           >
             <Avatar className="h-12 w-12">
-              <AvatarImage src={conv.other_user.profile_picture_url || undefined} />
+              <AvatarImage src={conv.other_user_avatar || undefined} />
               <AvatarFallback>
-                {conv.other_user.full_name?.[0]?.toUpperCase() || '?'}
+                {conv.other_user_name?.[0]?.toUpperCase() || '?'}
               </AvatarFallback>
             </Avatar>
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2">
                 <h3 className="font-semibold truncate">
-                  {conv.other_user.full_name || 'Unknown User'}
+                  {conv.other_user_name || 'Unknown User'}
                 </h3>
                 {conv.last_message_at && (
                   <span className="text-xs text-muted-foreground shrink-0">
-                    {format(new Date(conv.last_message_at), 'MMM d')}
+                    {formatTimestamp(new Date(conv.last_message_at))}
                   </span>
                 )}
               </div>
               
-              {conv.last_message && (
-                <p className="text-sm text-muted-foreground truncate">
-                  {conv.last_message.message_text}
-                </p>
-              )}
+              <p className="text-sm text-muted-foreground truncate">
+                {conv.last_message_text || 'No messages yet.'}
+              </p>
             </div>
 
             {conv.unread_count > 0 && (
-              <div className="h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center shrink-0">
+              <div className="h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center shrink-0 font-bold">
                 {conv.unread_count}
               </div>
             )}
