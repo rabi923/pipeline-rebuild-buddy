@@ -24,13 +24,8 @@ const ReceiverDashboard = () => {
 
   const handleStartChat = async (otherUser: OtherUser) => {
     if (!currentUser) return;
-    const { data: conversationId, error } = await supabase.rpc('get_or_create_conversation', {
-      other_user_id: otherUser.id,
-    });
-    if (error) {
-      console.error('Could not start conversation:', error);
-      return;
-    }
+    const { data: conversationId, error } = await supabase.rpc('get_or_create_conversation', { other_user_id: otherUser.id });
+    if (error) { console.error('Could not start conversation:', error); return; }
     setChattingWith({ otherUser, conversationId });
   };
 
@@ -39,6 +34,9 @@ const ReceiverDashboard = () => {
     setCurrentTab(tab);
   };
 
+  // --- THIS IS THE PROTECTIVE CHANGE ---
+  // If we are loading or if the user is null for any reason, show the loader.
+  // This prevents child components from rendering with invalid props.
   if (authLoading || !currentUser) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -47,28 +45,19 @@ const ReceiverDashboard = () => {
     );
   }
   
+  // This render logic is now safe because we know currentUser is valid.
   if (chattingWith) {
-    return (
-      <ChatWindow 
-        currentUser={currentUser}
-        otherUser={chattingWith.otherUser}
-        conversationId={chattingWith.conversationId}
-        onBack={() => setChattingWith(null)}
-      />
-    );
+    return <ChatWindow currentUser={currentUser} otherUser={chattingWith.otherUser} conversationId={chattingWith.conversationId} onBack={() => setChattingWith(null)} />;
   }
 
   let content;
   switch (currentTab) {
     case 'chat':
-      // *** THE CRITICAL CHANGE IS HERE ***
-      // We are now passing the currentUser as a prop.
       content = <ChatList currentUser={currentUser} onBack={() => handleTabChange('map')} />;
       break;
     case 'requests':
       content = <MyRequests onBack={() => handleTabChange('map')} />;
       break;
-    case 'map':
     default:
       content = <MapView userRole="food_receiver" onStartChat={handleStartChat} />;
       break;
@@ -76,8 +65,7 @@ const ReceiverDashboard = () => {
   
   return (
     <div className="h-screen w-screen flex flex-col">
-        <main className="flex-grow h-full w-full">{content}</main>
-        {/* Your BottomNavigation component would go here */}
+      <main className="flex-grow h-full w-full">{content}</main>
     </div>
   );
 };
