@@ -3,7 +3,10 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { useEffect } from 'react';
 import { useMapData, MapDataItem } from '@/hooks/useMapData';
+// ========================== THE FIX IS HERE ==========================
+// Change 1: Import the correct hook 'useUserLocation' from your existing file.
 import { useUserLocation } from '@/hooks/useUserLocation';
+// =====================================================================
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -15,7 +18,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
 });
 
-// A type for the other user's info, used for starting a chat
 export type OtherUser = { 
   id: string;
   fullName: string;
@@ -24,22 +26,23 @@ export type OtherUser = {
 
 interface MapViewProps {
   userRole: 'food_giver' | 'food_receiver';
-  onStartChat: (user: OtherUser) => void; // A function to tell the dashboard to open the chat window
+  onStartChat: (user: OtherUser) => void;
 }
 
 const RecenterAutomatically = ({ lat, lng }: { lat: number; lng: number }) => {
   const map = useMap();
-  useEffect(() => {
-    map.setView([lat, lng]);
-  }, [lat, lng, map]);
+  useEffect(() => { map.setView([lat, lng]); }, [lat, lng, map]);
   return null;
 };
 
 const MapView = ({ userRole, onStartChat }: MapViewProps) => {
-  const { location, error: locationError } = useGeolocation();
-  const { data, loading, error: dataError } = useMapData(userRole, location);
+  // ========================== THE FIX IS HERE ==========================
+  // Change 2: Call your hook by its correct name.
+  const { location, error: locationError, loading: locationLoading } = useUserLocation();
+  // =====================================================================
+  const { data, loading: dataLoading, error: dataError } = useMapData(userRole, location);
 
-  if (loading || !location) {
+  if (locationLoading || dataLoading) {
     return (
       <div className="h-full flex flex-col items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -52,16 +55,22 @@ const MapView = ({ userRole, onStartChat }: MapViewProps) => {
     return <div className="p-4 text-center text-red-500">Error: {locationError || 'Could not fetch map data.'}</div>;
   }
 
+  // Handle case where location permission might be denied or location is still null
+  if (!location) {
+      return (
+          <div className="p-4 text-center text-muted-foreground">
+              Could not determine your location. Please ensure location services are enabled for your browser.
+          </div>
+      );
+  }
+
   return (
     <MapContainer center={[location.lat, location.lng]} zoom={14} style={{ height: '100%', width: '100%' }}>
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' />
       
       {data.map((item: MapDataItem) => {
-        // Ensure that giver/receiver data exists before rendering marker
         const otherParty = userRole === 'food_receiver' ? item.giver : item.receiver;
-        if (!item.latitude || !item.longitude || !otherParty) {
-          return null; // Skip rendering if data is incomplete
-        }
+        if (!item.latitude || !item.longitude || !otherParty) return null;
 
         return (
           <Marker key={item.id} position={[item.latitude, item.longitude]}>
@@ -73,13 +82,8 @@ const MapView = ({ userRole, onStartChat }: MapViewProps) => {
                 
                 {userRole === 'food_receiver' && (
                   <Button 
-                    onClick={() => onStartChat({
-                      id: otherParty.id,
-                      fullName: otherParty.full_name || 'Unknown Giver',
-                      avatarUrl: otherParty.profile_picture_url,
-                    })}
-                    className="mt-2 w-full"
-                    size="sm"
+                    onClick={() => onStartChat({ id: otherParty.id, fullName: otherParty.full_name || 'Unknown Giver', avatarUrl: otherParty.profile_picture_url })}
+                    className="mt-2 w-full" size="sm"
                   >
                     Message Giver
                   </Button>
