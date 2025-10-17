@@ -1,9 +1,21 @@
+import 'leaflet/dist/leaflet.css';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import { useEffect } from 'react';
+import { useMapData, MapDataItem } from '@/hooks/useMapData';
+import { useUserLocation } from '@/hooks/useUserLocation';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-// Temporary dummy component to isolate the error.
-// All react-leaflet code has been removed.
+// Fix for default Leaflet icon not appearing correctly
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+});
 
+// A type for the other user's info, used for starting a chat
 export type OtherUser = { 
   id: string;
   fullName: string;
@@ -15,21 +27,69 @@ interface MapViewProps {
   onStartChat: (user: OtherUser) => void;
 }
 
+const RecenterAutomatically = ({ lat, lng }: { lat: number; lng: number }) => {
+  const map = useMap();
+  useEffect(() => { map.setView([lat, lng]); }, [lat, lng, map]);
+  return null;
+};
+
 const MapView = ({ userRole, onStartChat }: MapViewProps) => {
+  const { location, error: locationError, loading: locationLoading } = useUserLocation();
+  // We use the corrected useMapData hook that relies on useState/useEffect
+  const { data, loading: dataLoading, error: dataError } = useMapData(userRole, location);
+
+  if (locationLoading || dataLoading) {
+    return (
+      <div className="h-full w-full flex flex-col items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="mt-2 text-muted-foreground">Loading Map...</p>
+      </div>
+    );
+  }
+  
+  if (locationError || dataError) {
+    return <div className="p-4 text-center text-red-500">Error: {locationError || 'Could not fetch map data.'}</div>;
+  }
+
+  if (!location) {
+    return (
+      <div className="p-4 text-center text-muted-foreground">
+        Could not determine your location. Please enable location services.
+      </div>
+    );
+  }
+
   return (
-    <div className="h-full w-full flex flex-col items-center justify-center bg-muted p-4">
-      <h1 className="text-2xl font-bold">Map Is Temporarily Disabled</h1>
-      <p className="text-muted-foreground mt-2">This is a placeholder for debugging.</p>
-      <p className="mt-4">Please try navigating to another tab like "Chat" or "Requests".</p>
+    <MapContainer center={[location.lat, location.lng]} zoom={14} style={{ height: '100%', width: '100%' }}>
+      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' />
       
-      {/* Example button to test interaction */}
-      <Button 
-        className="mt-6"
-        onClick={() => alert("Interaction works!")}
-      >
-        Test Button
-      </Button>
-    </div>
+      {data.map((item: MapDataItem) => {
+        const otherParty = userRole === 'food_receiver' ? item.giver : item.receiver;
+        if (!item.latitude || !item.longitude || !otherParty) return null;
+
+        return (
+          <Marker key={item.id} position={[item.latitude, item.longitude]}>
+            <Popup>
+              <div className="space-y-1 text-sm">
+                <h4 className="font-bold text-base">{item.title || item.notes || 'Food Item'}</h4>
+                <p>By: {otherParty.organization_name || otherParty.full_name || 'Unknown'}</p>
+                {item.quantity && <p>Quantity: {item.quantity}</p>}
+                
+                {userRole === 'food_receiver' && (
+                  <Button 
+                    onClick={() => onStartChat({ id: otherParty.id, fullName: otherParty.full_name || 'Unknown Giver', avatarUrl: otherParty.profile_picture_url })}
+                    className="mt-2 w-full" size="sm"
+                  >
+                    Message Giver
+                  </Button>
+                )}
+              </div>
+            </Popup>
+          </Marker>
+        );
+      })}
+      {location && <RecenterAutomatically lat={location.lat} lng={location.lng} />}
+    </MapContainer>
   );
 };
 
