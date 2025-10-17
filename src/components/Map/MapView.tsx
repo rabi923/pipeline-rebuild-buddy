@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { useEffect } from 'react';
 import { useMapData, MapDataItem } from '@/hooks/useMapData';
-import { useGeolocation } from '@/hooks/useGeolocation';
+import { useUserLocation } from '@/hooks/useUserLocation';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
