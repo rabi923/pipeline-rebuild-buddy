@@ -307,3 +307,70 @@ CREATE POLICY "Users can update their own food photos"
 CREATE POLICY "Users can delete their own food photos"
   ON storage.objects FOR DELETE
   USING (bucket_id = 'food-photos' AND auth.uid()::text = (storage.foldername(name))[1]);
+CREATE OR REPLACE FUNCTION public.get_user_conversations_with_details(p_user_id UUID)
+RETURNS TABLE (
+  id UUID,                -- The conversation's ID
+  other_user_id UUID,     -- The ID of the other person in the chat
+  other_user_name TEXT,   -- The full name of the other person
+  other_user_avatar TEXT, -- The profile picture URL of the other person
+  last_message_text TEXT, -- The text of the very last message
+  last_message_at TIMESTAMPTZ, -- The timestamp of the last message
+  unread_count BIGINT      -- How many messages are unread for the calling user (p_user_id)
+)
+LANGUAGE plpgsql
+SECURITY DEFINER          -- This is necessary to bypass RLS and read the other user's profile info
+SET search_path = public
+AS $$
+BEGIN
+  RETURN QUERY
+  WITH ranked_messages AS (
+    -- This subquery efficiently finds the single most recent message for each conversation
+    SELECT
+      m.conversation_id,
+      m.message_text,
+      ROW_NUMBER() OVER(PARTITION BY m.conversation_id ORDER BY m.created_at DESC) as rn
+    FROM public.messages m
+  )
+  SELECT
+    c.id, -- The conversation ID
+    -- This logic correctly identifies who the "other user" is
+    CASE
+      WHEN c.user1_id = p_user_id THEN c.user2_id
+      ELSE c.user1_id
+    END AS other_user_id,
+
+    -- This joins the profiles table to get the other user's name and avatar
+    p.full_name AS other_user_name,
+    p.profile_picture_url AS other_user_avatar,
+
+    -- This joins our ranked_messages to get only the #1 ranked (most recent) message text
+    lm.message_text AS last_message_text,
+    c.last_message_at,
+
+    -- This subquery efficiently counts only the messages that are unread by the user
+    (
+      SELECT COUNT(*)
+      FROM public.messages msg
+      WHERE msg.conversation_id = c.id
+        AND msg.sender_id != p_user_id
+        AND msg.read_at IS NULL
+    ) AS unread_count
+  FROM
+    public.conversations c
+  -- We join profiles on the "other_user_id" we figured out earlier
+  JOIN
+    public.profiles p ON p.id = CASE
+      WHEN c.user1_id = p_user_id THEN c.user2_id
+      ELSE c.user1_id
+    END
+  -- We use a LEFT JOIN because a conversation might not have any messages yet
+  LEFT JOIN
+    ranked_messages lm ON lm.conversation_id = c.id AND lm.rn = 1
+  WHERE
+    -- This ensures we only get conversations the user is actually a part of
+    c.user1_id = p_user_id OR c.user2_id = p_user_id
+  ORDER BY
+    -- Sorts the list so the most recent conversation is at the top
+    c.last_message_at DESC NULLS LAST;
+END;
+$$;
