@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 
-// Type definition for our SQL function's return value
+// This TypeScript type defines the exact shape of the data
+// our new SQL function ('get_user_conversations_with_details') returns.
 export type ConversationDetails = {
-  id: string;
+  id: string; // The conversation_id
   other_user_id: string;
   other_user_name: string | null;
   other_user_avatar: string | null;
@@ -13,46 +15,53 @@ export type ConversationDetails = {
   unread_count: number;
 };
 
-// The hook now accepts the user object, just like the last working version.
-export const useConversations = (user: User | null) => {
-  // We are back to using useState, which is stable in your environment.
-  const [conversations, setConversations] = useState<ConversationDetails[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<any>(null);
+export const useConversations = () => {
+  const queryClient = useQueryClient();
+  // State to hold the current user, fetched once.
+  const [user, setUser] = useState<User | null>(null);
 
-  // This function will fetch the data using our efficient SQL function.
-  const fetchConversations = async (currentUser: User) => {
-    setLoading(true);
-    try {
-      const { data, error: rpcError } = await supabase.rpc('get_user_conversations_with_details', {
-        p_user_id: currentUser.id,
+  // Get the current user session when the hook is first used.
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setUser(data.user);
+    };
+    fetchUser();
+  }, []);
+
+
+  // The main query to fetch all conversations.
+  const {
+    data: conversations,
+    isLoading,
+    error,
+  } = useQuery<ConversationDetails[]>({
+    // The query key uniquely identifies this data. It includes the user's ID
+    // so it refetches if the user were to ever change.
+    queryKey: ['conversations', user?.id],
+
+    // The query function itself:
+    queryFn: async () => {
+      // Don't run if there's no user. This is important.
+      if (!user) return [];
+
+      // Call the database function we created in Step 1.
+      const { data, error } = await supabase.rpc('get_user_conversations_with_details', {
+        p_user_id: user.id, // Pass the current user's ID as the parameter
       });
 
-      if (rpcError) {
-        throw rpcError;
+      if (error) {
+        console.error('Error fetching conversations:', error);
+        throw new Error(error.message);
       }
-      setConversations(data || []);
-    } catch (e) {
-      setError(e);
-      console.error("Failed to fetch conversations:", e);
-    } finally {
-      setLoading(false);
-    }
-  };
+      return data || [];
+    },
 
-  // The main useEffect hook. It runs when the user object is available.
-  useEffect(() => {
-    // Only fetch if the user object exists.
-    if (user) {
-      fetchConversations(user);
-    } else {
-      // If there is no user, stop loading and clear conversations.
-      setLoading(false);
-      setConversations([]);
-    }
-  }, [user]); // It re-runs if the user changes.
+    // This ensures the query only runs when the user object is available.
+    enabled: !!user,
+  });
 
-  // The real-time subscription for new messages.
+  // This `useEffect` sets up a real-time listener for new messages.
   useEffect(() => {
     if (!user) return;
 
@@ -61,19 +70,25 @@ export const useConversations = (user: User | null) => {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },
-        // When a new message comes in, simply refetch the entire list.
-        () => fetchConversations(user)
+        (payload) => {
+          // When a new message is inserted, invalidate the query.
+          // This tells react-query to refetch the conversation list,
+          // ensuring the UI is always up-to-date.
+          queryClient.invalidateQueries({ queryKey: ['conversations', user.id] });
+        }
       )
       .subscribe();
 
+    // Cleanup function: remove the channel subscription when the component unmounts.
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]); // Re-subscribes if the user changes.
+  }, [user, queryClient]);
 
   return {
-    conversations,
-    loading,
+    // We combine the initial user loading with the conversation loading states.
+    conversations: conversations || [],
+    loading: isLoading || !user,
     error,
   };
 };
