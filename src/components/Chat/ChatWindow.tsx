@@ -7,7 +7,6 @@ import { Loader2, ArrowLeft, Send } from 'lucide-react';
 import { format } from 'date-fns';
 import type { User } from '@supabase/supabase-js';
 
-// Define the shape of the user profile objects passed as props
 interface UserProfile {
   id: string;
   full_name: string;
@@ -22,76 +21,41 @@ interface ChatWindowProps {
 }
 
 const ChatWindow = ({ currentUser, otherUser, conversationId, onBack }: ChatWindowProps) => {
-  // We now use useState instead of useQuery and useMutation
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
 
-  // Fetch initial messages using useEffect
   useEffect(() => {
     if (!conversationId) return;
-
     const fetchMessages = async () => {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: true });
-      
-      if (error) {
-        console.error("Error fetching messages:", error);
-      } else {
-        setMessages(data || []);
-      }
+      const { data, error } = await supabase.from('messages').select('*').eq('conversation_id', conversationId).order('created_at', { ascending: true });
+      if (error) { console.error("Error fetching messages:", error); } else { setMessages(data || []); }
       setLoading(false);
     };
-
     fetchMessages();
   }, [conversationId]);
 
-  // Auto-scroll to the newest message
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-  
-  // Real-time subscription to new messages
-  useEffect(() => {
-    const channel = supabase
-      .channel(`chat-room-${conversationId}`)
+    const channel = supabase.channel(`chat-room-${conversationId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}`},
-        (payload) => {
-          setMessages((currentMessages) => [...currentMessages, payload.new]);
-        }
-      )
+        (payload) => { setMessages((currentMessages) => [...currentMessages, payload.new]); })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [conversationId]);
 
-  // Simple async function to handle sending messages
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || isSending) return;
-
     setIsSending(true);
     const textToSend = newMessage.trim();
     setNewMessage('');
-
-    // Insert the new message
-    await supabase.from('messages').insert({
-      conversation_id: conversationId,
-      sender_id: currentUser.id,
-      message_text: textToSend,
-    });
-    
-    // Update the conversation's timestamp for sorting
-    await supabase
-      .from('conversations')
-      .update({ last_message_at: new Date().toISOString() })
-      .eq('id', conversationId);
-
+    await supabase.from('messages').insert({ conversation_id: conversationId, sender_id: currentUser.id, message_text: textToSend });
+    await supabase.from('conversations').update({ last_message_at: new Date().toISOString() }).eq('id', conversationId);
     setIsSending(false);
   };
 
@@ -102,10 +66,33 @@ const ChatWindow = ({ currentUser, otherUser, conversationId, onBack }: ChatWind
         <Avatar className="h-10 w-10 mr-3"><AvatarImage src={otherUser.profile_picture_url || undefined} /><AvatarFallback>{otherUser.full_name?.[0]}</AvatarFallback></Avatar>
         <h2 className="font-bold text-lg">{otherUser.full_name}</h2>
       </header>
-
       <main className="flex-1 p-4 overflow-y-auto">
         {loading ? ( <div className="flex justify-center items-center h-full"><Loader2 className="h-6 w-6 animate-spin" /></div> ) : (
           <div className="space-y-4">
             {messages.map((msg) => (
               <div key={msg.id} className={`flex items-end gap-2 ${msg.sender_id === currentUser.id ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-xs md:max-w-md p-3 rounded-lg ${ msg.sender_id === currentUser.id ? 'bg-primary text-primary-foregrou
+                {/* ======================= THE FIX IS HERE ======================== */}
+                <div className={`max-w-xs md:max-w-md p-3 rounded-lg ${ msg.sender_id === currentUser.id ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                {/* ================================================================ */}
+                  <p className="break-words">{msg.message_text}</p>
+                  <p className={`text-xs mt-1 text-right ${ msg.sender_id === currentUser.id ? 'text-primary-foreground/70' : 'text-muted-foreground' }`}>{format(new Date(msg.created_at), 'p')}</p>
+                </div>
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+        )}
+      </main>
+      <footer className="p-4 border-t bg-card">
+        <form onSubmit={handleSendMessage} className="flex gap-2">
+          <Input value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Type a message..." disabled={isSending} autoComplete="off" />
+          <Button type="submit" disabled={isSending || !newMessage.trim()}>
+            {isSending ? <Loader2 className="h-4 w-4 animate-spin"/> : <Send size={20} />}
+          </Button>
+        </form>
+      </footer>
+    </div>
+  );
+};
+
+export default ChatWindow;
