@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import FoodCard from '../FoodCard';
 import type { MapDataItem } from '@/hooks/useMapData';
-import { useIsMobile } from '@/hooks/use-is-mobile'; // Correct import path
+import { useIsMobile } from '@/hooks/use-mobile'; // Correct import path
 import { useEffect } from 'react';
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
