@@ -4,7 +4,7 @@ import MapView, { OtherUser } from "@/components/Map/MapView";
 import ChatList from "@/components/Chat/ChatList";
 import ChatWindow from "@/components/Chat/ChatWindow";
 import MyRequests from "@/components/MyRequests";
-import BottomNavigation from "@/components/Layout/BottomNavigation";
+import BottomNavigation from "@/components/Map/BottomNavigation";
 import { Loader2 } from "lucide-react";
 import AddRequestDialog from "@/components/AddRequestDialog";
 
