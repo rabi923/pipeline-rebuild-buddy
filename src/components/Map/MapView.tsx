@@ -9,7 +9,10 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import FoodCard from '../FoodCard';
 import type { MapDataItem } from '@/hooks/useMapData';
-import { useIsMobile } from '@/hooks/useIsMobile';
+// ========================= THIS IS THE FINAL FIX =========================
+// The import path is now corrected to match your existing file name.
+import { useIsMobile } from '@/hooks/use-is-mobile';
+// =======================================================================
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -39,7 +42,7 @@ const MapView = ({ userRole, onStartChat }: MapViewProps) => {
   if (!location) { return <div className="p-4 text-center">Please enable location services.</div>; }
 
   const handleMessageClick = (otherUser: OtherUser) => {
-    setSelectedItem(null); // Close dialog first
+    setSelectedItem(null);
     onStartChat(otherUser);
   };
 
