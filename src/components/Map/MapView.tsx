@@ -37,7 +37,7 @@ const MapView = ({ userRole, onStartChat }: MapViewProps) => {
       // Create the map with a default center.
       const map = L.map(mapContainerRef.current, { center: [13.0827, 80.2707], zoom: 13 });
       // Add the street tiles.
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',}).addTo(map);
       // Add the layer group that will hold our markers.
       dataMarkersRef.current.addTo(map);
       // Save the map instance to the ref so it persists.
