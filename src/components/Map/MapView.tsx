@@ -6,9 +6,9 @@ import { useUserLocation } from '@/hooks/useUserLocation';
 import { Loader2 } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import FoodCard from '../FoodCard';
-import ReactDOM from 'react-dom/client';
+// ReactDOM is no longer needed
+// import ReactDOM from 'react-dom/client';
 
-// Boilerplate to fix Leaflet's default icon path issues
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
 const DefaultIcon = L.icon({ iconUrl, shadowUrl, iconAnchor: [12, 41] });
@@ -31,43 +31,42 @@ const MapView = ({ userRole, onStartChat }: MapViewProps) => {
   const { data, loading: dataLoading } = useMapData(userRole, location);
   const [selectedItem, setSelectedItem] = useState<MapDataItem | null>(null);
 
-  // Effect to initialize the map
+  // --- THIS IS THE KEY FIX ---
+  // We combine the map initialization and the user location update into a single useEffect
+  // that depends on the 'location' state.
   useEffect(() => {
-    if (mapContainerRef.current && !mapRef.current) {
-      const map = L.map(mapContainerRef.current, { center: [13.0827, 80.2707], zoom: 13 });
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
-      dataMarkersRef.current.addTo(map);
-      mapRef.current = map;
-    }
-  }, []);
+    // Only proceed if the map container exists and we have a valid location.
+    if (mapContainerRef.current && location) {
+      // If the map hasn't been created yet...
+      if (!mapRef.current) {
+        // ...create it now. By this point, the container div is guaranteed to have a size.
+        const map = L.map(mapContainerRef.current).setView([location.lat, location.lng], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
+        dataMarkersRef.current.addTo(map);
+        mapRef.current = map;
+      } else {
+        // If the map already exists, just update its view.
+        mapRef.current.setView([location.lat, location.lng], 15);
+      }
 
-  // Effect to update the user's location on the map
-  useEffect(() => {
-    if (mapRef.current && location) {
-      mapRef.current.setView([location.lat, location.lng], 15);
+      // Update the user's marker.
       if (userMarkerRef.current) {
         userMarkerRef.current.setLatLng([location.lat, location.lng]);
       } else {
         userMarkerRef.current = L.marker([location.lat, location.lng]).addTo(mapRef.current);
       }
     }
+    // This effect runs whenever 'location' changes.
   }, [location]);
 
-  // Effect to update the data markers
+  // Effect to update data markers (this is unchanged and correct)
   useEffect(() => {
     if (!mapRef.current || !data) return;
-
     dataMarkersRef.current.clearLayers();
     data.forEach((item: MapDataItem) => {
       if (item.latitude && item.longitude) {
         const marker = L.marker([item.latitude, item.longitude]);
-        
-        // When a marker is clicked, open our React Dialog component
-        marker.on('click', () => {
-          if (userRole === 'food_receiver') {
-            setSelectedItem(item);
-          }
-        });
+        marker.on('click', () => { if (userRole === 'food_receiver') setSelectedItem(item); });
         marker.addTo(dataMarkersRef.current);
       }
     });
@@ -86,7 +85,6 @@ const MapView = ({ userRole, onStartChat }: MapViewProps) => {
         </div>
       )}
       <div ref={mapContainerRef} style={{ height: '100%', width: '100%', zIndex: 0 }} />
-      
       <Dialog open={!!selectedItem} onOpenChange={(isOpen) => !isOpen && setSelectedItem(null)}>
         <DialogContent className="max-w-md w-[95%] p-0 border-0">
           {selectedItem && (
