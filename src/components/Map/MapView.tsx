@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import 'leaflet/dist/leaflet.css';
+
 import L from 'leaflet';
 import { useMapData, MapDataItem } from '@/hooks/useMapData';
 import { useUserLocation } from '@/hooks/useUserLocation';
