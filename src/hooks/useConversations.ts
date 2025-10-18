@@ -8,39 +8,31 @@ export type ConversationDetails = {
   last_message_at: string | null; unread_count: number;
 };
 
-// This hook now follows the stable useState/useEffect pattern.
 export const useConversations = () => {
   const [conversations, setConversations] = useState<ConversationDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
 
+  const fetchUserAndConversations = async (currentUser: User) => {
+      const { data, error } = await supabase.rpc('get_user_conversations_with_details', {
+        p_user_id: currentUser.id,
+      });
+      if (error) console.error("Failed to fetch conversations:", error);
+      else setConversations(data || []);
+      setLoading(false);
+  };
+  
   useEffect(() => {
-    const fetchUserAndConversations = async () => {
+    const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
-
-      if (!user) {
-        setLoading(false);
-        setConversations([]);
-        return;
-      }
-      
-      const { data, error } = await supabase.rpc('get_user_conversations_with_details', {
-        p_user_id: user.id,
-      });
-
-      if (error) {
-        console.error("Failed to fetch conversations:", error);
-      } else {
-        setConversations(data || []);
-      }
-      setLoading(false);
+      if (user) await fetchUserAndConversations(user); else setLoading(false);
     };
-    fetchUserAndConversations();
+    init();
 
     const channel = supabase.channel('public:messages')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' },
-        () => fetchUserAndConversations()
+        (payload) => { if(user) fetchUserAndConversations(user); }
       ).subscribe();
 
     return () => { supabase.removeChannel(channel); };
