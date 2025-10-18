@@ -6,9 +6,8 @@ import { useUserLocation } from '@/hooks/useUserLocation';
 import { Loader2 } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import FoodCard from '../FoodCard';
-// ReactDOM is no longer needed
-// import ReactDOM from 'react-dom/client';
 
+// Boilerplate to fix Leaflet's default icon path issues
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
 const DefaultIcon = L.icon({ iconUrl, shadowUrl, iconAnchor: [12, 41] });
@@ -31,38 +30,43 @@ const MapView = ({ userRole, onStartChat }: MapViewProps) => {
   const { data, loading: dataLoading } = useMapData(userRole, location);
   const [selectedItem, setSelectedItem] = useState<MapDataItem | null>(null);
 
-  // --- THIS IS THE KEY FIX ---
-  // We combine the map initialization and the user location update into a single useEffect
-  // that depends on the 'location' state.
+  // --- EFFECT 1: INITIALIZE THE MAP (Runs only ONCE) ---
+  // This is the stable pattern from your working example.
   useEffect(() => {
-    // Only proceed if the map container exists and we have a valid location.
-    if (mapContainerRef.current && location) {
-      // If the map hasn't been created yet...
-      if (!mapRef.current) {
-        // ...create it now. By this point, the container div is guaranteed to have a size.
-        const map = L.map(mapContainerRef.current).setView([location.lat, location.lng], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
-        dataMarkersRef.current.addTo(map);
-        mapRef.current = map;
-      } else {
-        // If the map already exists, just update its view.
-        mapRef.current.setView([location.lat, location.lng], 15);
-      }
+    if (mapContainerRef.current && !mapRef.current) {
+      // Create the map with a default center.
+      const map = L.map(mapContainerRef.current, { center: [13.0827, 80.2707], zoom: 13 });
+      // Add the street tiles.
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
+      // Add the layer group that will hold our markers.
+      dataMarkersRef.current.addTo(map);
+      // Save the map instance to the ref so it persists.
+      mapRef.current = map;
+    }
+  }, []); // The empty array ensures this runs only one time.
 
-      // Update the user's marker.
+  // --- EFFECT 2: UPDATE USER LOCATION (Runs when 'location' changes) ---
+  useEffect(() => {
+    // Only run if the map has been created and we have a user location.
+    if (mapRef.current && location) {
+      // Move the map's view to the user's location.
+      mapRef.current.setView([location.lat, location.lng], 15);
+      // Create or update the user's blue dot marker.
       if (userMarkerRef.current) {
         userMarkerRef.current.setLatLng([location.lat, location.lng]);
       } else {
+        // You can customize this marker to look different if you want.
         userMarkerRef.current = L.marker([location.lat, location.lng]).addTo(mapRef.current);
       }
     }
-    // This effect runs whenever 'location' changes.
   }, [location]);
 
-  // Effect to update data markers (this is unchanged and correct)
+  // --- EFFECT 3: UPDATE DATA MARKERS (Runs when 'data' changes) ---
   useEffect(() => {
     if (!mapRef.current || !data) return;
+    // Clear all old markers.
     dataMarkersRef.current.clearLayers();
+    // Add new markers for each item in the data.
     data.forEach((item: MapDataItem) => {
       if (item.latitude && item.longitude) {
         const marker = L.marker([item.latitude, item.longitude]);
