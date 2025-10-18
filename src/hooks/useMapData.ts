@@ -6,7 +6,6 @@ export type MapDataItem = {
   id: string; latitude: number; longitude: number; [key: string]: any;
 };
 
-// This hook is rewritten to remove @tanstack/react-query
 export const useMapData = (
   userRole: 'food_giver' | 'food_receiver',
   userLocation: LocationCoords | null
@@ -17,19 +16,18 @@ export const useMapData = (
 
   const refetch = async () => {
     if (!userLocation) { setLoading(false); return; }
-    setLoading(true);
-    setError(null);
+    setLoading(true); setError(null);
     try {
       if (userRole === 'food_receiver') {
         const { data: listings, error: fetchError } = await supabase.from('food_listings')
-          .select(`*, giver:profiles!giver_id (id, full_name, profile_picture_url, organization_name)`)
+          .select(`*, giver:profiles!giver_id (*)`)
           .eq('is_available', true).not('latitude', 'is', null).not('longitude', 'is', null)
           .order('created_at', { ascending: false });
         if (fetchError) throw fetchError;
         setData(Array.isArray(listings) ? listings : []);
       } else {
         const { data: requests, error: fetchError } = await supabase.from('food_requests')
-          .select(`*, receiver:profiles!receiver_id (id, full_name, profile_picture_url, organization_name)`)
+          .select(`*, receiver:profiles!receiver_id (*)`)
           .eq('status', 'active').not('latitude', 'is', null).not('longitude', 'is', null)
           .order('created_at', { ascending: false });
         if (fetchError) throw fetchError;
