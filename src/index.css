@@ -156,3 +156,6 @@ All colors MUST be HSL.
 .leaflet-bar a:hover {
   @apply bg-muted;
 }
+/* Fix to ensure Leaflet popups render on top of other UI */
+.leaflet-popup-pane { z-index: 1000 !important; }
+.leaflet-container { z-index: 0; }
