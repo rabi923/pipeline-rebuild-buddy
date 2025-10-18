@@ -11,7 +11,7 @@ import FoodCard from '../FoodCard';
 import type { MapDataItem } from '@/hooks/useMapData';
 // ========================= THIS IS THE FINAL FIX =========================
 // The import path is now corrected to match your existing file name.
-import { useIsMobile } from '@/hooks/use-is-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 // =======================================================================
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
