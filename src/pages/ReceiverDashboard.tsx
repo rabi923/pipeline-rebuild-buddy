@@ -3,7 +3,7 @@ import { useAuthSession } from '@/hooks/useAuthSession';
 import MapView, { OtherUser } from "@/components/Map/MapView";
 import ChatList from "@/components/Chat/ChatList";
 import MyRequests from "@/components/MyRequests";
-import BottomNavigation from "@/components/Layout/BottomNavigation"; // Assuming this is at src/components/Layout
+import BottomNavigation from "@/components/Map/BottomNavigation"; // Assuming this is at src/components/Layout
 import { Loader2 } from "lucide-react";
 import AddRequestDialog from "@/components/AddRequestDialog";
 import ChatWindow from "@/components/Chat/ChatWindow";
