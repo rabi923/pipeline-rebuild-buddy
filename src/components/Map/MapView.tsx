@@ -33,7 +33,7 @@ const MapView = ({ userRole, onStartChat }: MapViewProps) => {
   useEffect(() => {
     if (mapContainerRef.current && !mapRef.current) {
       const map = L.map(mapContainerRef.current, { center: [13.0827, 80.2707], zoom: 13 });
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',}).addTo(map);
       dataMarkersRef.current.addTo(map);
       mapRef.current = map;
     }
