@@ -56,7 +56,7 @@ const MapView = ({ userRole, onStartChat }: MapViewProps) => {
         userMarkerRef.current.setLatLng([location.lat, location.lng]);
       } else {
         // You can customize this marker to look different if you want.
-        userMarkerRef.current = L.marker([location.lat, location.lng]).addTo(mapRef.current);
+        userMarkerRef.current = L.marker([location.lat, location.lng]).addTo(mapRef.current).bindPopup('You are here.');
       }
     }
   }, [location]);
