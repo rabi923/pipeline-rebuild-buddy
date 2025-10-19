@@ -22,7 +22,6 @@ const ReceiverDashboard = () => {
     if (tab === 'add') { setShowAddDialog(true); } else { setCurrentTab(tab); }
   };
   
-  // This is a much cleaner way to decide which component to show.
   const MainContent = () => {
     switch (currentTab) {
       case 'chat': return <ChatList onBack={() => setCurrentTab('map')} />;
@@ -33,27 +32,31 @@ const ReceiverDashboard = () => {
   };
 
   return (
-    <div className="h-screen w-screen flex flex-col">
-      {/* --- THIS IS THE KEY CHANGE --- */}
-      {/* This container holds our main views and uses CSS to show/hide them */}
-      <div className="flex-grow h-full w-full">
-        
-        {/* The Main Content View (Map, ChatList, etc.) */}
-        <div className={chattingWith ? 'hidden' : 'h-full w-full'}>
-          <MainContent />
-          <BottomNavigation currentTab={currentTab} onTabChange={handleTabChange} userRole="food_receiver"/>
-          <AddRequestDialog open={showAddDialog} onOpenChange={setShowAddDialog} onSuccess={() => {}} />
-        </div>
-
-        {/* The Chat Window View (only visible when 'chattingWith' is active) */}
-        {chattingWith && (
-          <div className="h-full w-full">
-            <ChatWindow otherUser={chattingWith} onBack={() => setChattingWith(null)} />
-          </div>
-        )}
-
+    // --- THIS IS THE KEY CHANGE: THE PARENT IS NOW A "RELATIVE" CONTAINER ---
+    <div className="h-screen w-screen relative">
+      
+      {/* --- LAYER 1: The Main Dashboard View --- */}
+      {/* It is always rendered, but we change its opacity and interactivity */}
+      <div
+        className={`
+          absolute inset-0 h-full w-full
+          transition-opacity duration-300 ease-in-out
+          ${chattingWith ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}
+        `}
+      >
+        <MainContent />
+        <BottomNavigation currentTab={currentTab} onTabChange={handleTabChange} userRole="food_receiver"/>
+        <AddRequestDialog open={showAddDialog} onOpenChange={setShowAddDialog} onSuccess={() => {}} />
       </div>
-      {/* --- END OF KEY CHANGE --- */}
+
+      {/* --- LAYER 2: The Chat Window View --- */}
+      {/* This only gets added to the DOM when active, and appears on top */}
+      {chattingWith && (
+        <div className="absolute inset-0 h-full w-full z-10 bg-background">
+          <ChatWindow otherUser={chattingWith} onBack={() => setChattingWith(null)} />
+        </div>
+      )}
+      
     </div>
   );
 };
