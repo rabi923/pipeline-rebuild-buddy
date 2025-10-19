@@ -19,15 +19,17 @@ export const useMapData = (
     setLoading(true); setError(null);
     try {
       if (userRole === 'food_receiver') {
+        // --- THIS IS THE FIX: Restoring the correct, explicit query ---
         const { data: listings, error: fetchError } = await supabase.from('food_listings')
-          .select(`*, giver:profiles!giver_id (*)`)
+          .select(`*, giver:profiles!giver_id (id, full_name, profile_picture_url, organization_name)`)
           .eq('is_available', true).not('latitude', 'is', null).not('longitude', 'is', null)
           .order('created_at', { ascending: false });
         if (fetchError) throw fetchError;
         setData(Array.isArray(listings) ? listings : []);
       } else {
+        // --- THIS IS THE FIX: Restoring the correct, explicit query ---
         const { data: requests, error: fetchError } = await supabase.from('food_requests')
-          .select(`*, receiver:profiles!receiver_id (*)`)
+          .select(`*, receiver:profiles!receiver_id (id, full_name, profile_picture_url, organization_name)`)
           .eq('status', 'active').not('latitude', 'is', null).not('longitude', 'is', null)
           .order('created_at', { ascending: false });
         if (fetchError) throw fetchError;
