@@ -55,8 +55,17 @@ const MapView = ({ userRole, onStartChat }: MapViewProps) => {
       if (userMarkerRef.current) {
         userMarkerRef.current.setLatLng([location.lat, location.lng]);
       } else {
-        // You can customize this marker to look different if you want.
-        userMarkerRef.current = L.marker([location.lat, location.lng]).addTo(mapRef.current).bindPopup('You are here.');
+        const userIcon = L.divIcon({
+          className: 'user-location-marker',
+          html: '<div class="pulse-ring"></div><div class="dot"></div>',
+          iconSize: [24, 24],
+          iconAnchor: [12, 12], // Center the icon
+        });
+
+        userMarkerRef.current = L.marker([location.lat, location.lng], { 
+          icon: userIcon,
+          zIndexOffset: 1000 // Ensure it's on top
+        }).addTo(mapRef.current).bindPopup('You are here.');
       }
     }
   }, [location]);
