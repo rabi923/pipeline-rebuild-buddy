@@ -7,6 +7,25 @@ export const useUserLocation = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [permissionDenied, setPermissionDenied] = useState(false);
+  const fetchCurrentLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      setError('Geolocation not supported');
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    getCurrentPosition()
+      .then((coords) => {
+        setLocation(coords);
+        setError(null);
+        setPermissionDenied(false);
+      })
+      .catch((err) => {
+        setError(err.message);
+        if (err.code === 1) setPermissionDenied(true);
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -70,5 +89,5 @@ export const useUserLocation = () => {
     }
   };
 
-  return { location, error, loading, permissionDenied, recenter };
+  return { location, error, loading, permissionDenied, recenter:fetchCurrentLocation };
 };
