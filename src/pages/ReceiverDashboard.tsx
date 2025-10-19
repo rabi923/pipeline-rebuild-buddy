@@ -18,15 +18,12 @@ const ReceiverDashboard = () => {
     return <div className="h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary"/></div>;
   }
   
-  if (chattingWith) {
-    return <ChatWindow otherUser={chattingWith} onBack={() => setChattingWith(null)} />;
-  }
-
   const handleTabChange = (tab: string) => {
     if (tab === 'add') { setShowAddDialog(true); } else { setCurrentTab(tab); }
   };
   
-  const renderContent = () => {
+  // This is a much cleaner way to decide which component to show.
+  const MainContent = () => {
     switch (currentTab) {
       case 'chat': return <ChatList onBack={() => setCurrentTab('map')} />;
       case 'requests': return <MyRequests onBack={() => setCurrentTab('map')} />;
@@ -37,9 +34,26 @@ const ReceiverDashboard = () => {
 
   return (
     <div className="h-screen w-screen flex flex-col">
-      <main className="flex-grow h-full w-full">{renderContent()}</main>
-      <BottomNavigation currentTab={currentTab} onTabChange={handleTabChange} userRole="food_receiver"/>
-      <AddRequestDialog open={showAddDialog} onOpenChange={setShowAddDialog} onSuccess={() => { /* Consider refetch here */ }} />
+      {/* --- THIS IS THE KEY CHANGE --- */}
+      {/* This container holds our main views and uses CSS to show/hide them */}
+      <div className="flex-grow h-full w-full">
+        
+        {/* The Main Content View (Map, ChatList, etc.) */}
+        <div className={chattingWith ? 'hidden' : 'h-full w-full'}>
+          <MainContent />
+          <BottomNavigation currentTab={currentTab} onTabChange={handleTabChange} userRole="food_receiver"/>
+          <AddRequestDialog open={showAddDialog} onOpenChange={setShowAddDialog} onSuccess={() => {}} />
+        </div>
+
+        {/* The Chat Window View (only visible when 'chattingWith' is active) */}
+        {chattingWith && (
+          <div className="h-full w-full">
+            <ChatWindow otherUser={chattingWith} onBack={() => setChattingWith(null)} />
+          </div>
+        )}
+
+      </div>
+      {/* --- END OF KEY CHANGE --- */}
     </div>
   );
 };
