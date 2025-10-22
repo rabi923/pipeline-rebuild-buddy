@@ -35,6 +35,8 @@ const GiverDashboard = () => {
       default: return <MapView userRole="food_giver" onStartChat={setChattingWith} />;
     }
   };
+  const canGoBack = chattingWith !== null || currentTab !== 'map';
+  const handleBack = () => { if (chattingWith) { setChattingWith(null); } else if (currentTab !== 'map') { setCurrentTab('map'); } };
 
   return (
     <div className="h-screen w-screen flex flex-col">
